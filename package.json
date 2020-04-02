@@ -9,18 +9,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/github_account/react-native-ito-bluetooth.git",
-    "baseUrl": "https://github.com/github_account/react-native-ito-bluetooth"
+    "url": "git+https://github.com/ito-org/react-native-ito-bluetooth.git",
+    "baseUrl": "https://github.com/ito-org/react-native-ito-bluetooth"
   },
   "keywords": [
     "react-native"
   ],
   "author": {
-    "name": "Your Name",
-    "email": "yourname@email.com"
+    "name": "Christian Romberg",
+    "email": "info@ito-app.org"
   },
-  "license": "MIT",
-  "licenseFilename": "LICENSE",
   "readmeFilename": "README.md",
   "peerDependencies": {
     "react": "^16.8.1",
