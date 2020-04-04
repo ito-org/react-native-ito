@@ -9,6 +9,13 @@
 // * https://github.com/facebook/react-native/blob/0.60-stable/template/android/app/build.gradle
 //   original location:
 //   - https://github.com/facebook/react-native/blob/0.58-stable/local-cli/templates/HelloWorld/android/app/build.gradle
+allprojects {
+    repositories {
+        google()
+        jcenter()
+
+    }
+}
 
 def DEFAULT_COMPILE_SDK_VERSION = 28
 def DEFAULT_BUILD_TOOLS_VERSION = '28.0.3'
@@ -76,7 +83,9 @@ repositories {
 
 dependencies {
     //noinspection GradleDynamicVersion
-    implementation 'com.facebook.react:react-native:+'  // From node_modules
+    implementation project(path: ':itoapp')
+    implementation 'com.facebook.react:react-native:+'
+    implementation files('android-app/gradle/wrapper/gradle-wrapper.jar')  // From node_modules
 }
 
 def configureReactNativePom(def pom) {

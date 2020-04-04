@@ -1,0 +1,2 @@
+include ':itoapp'
+project(':itoapp').projectDir = new File('android-app/itoapp')
