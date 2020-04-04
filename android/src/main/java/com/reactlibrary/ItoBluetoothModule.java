@@ -1,15 +1,11 @@
 package com.reactlibrary;
 
-import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.facebook.react.bridge.Callback;
@@ -24,7 +20,6 @@ import org.itoapp.strict.service.TracingService;
 public class ItoBluetoothModule extends ReactContextBaseJavaModule {
 
     private static final String LOG_TAG = "ItoBluetoothModule";
-    private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 4713;
     private final ReactApplicationContext reactContext;
     private TracingServiceInterface tracingServiceInterface;
     private Callback jsDistanceCallback;
