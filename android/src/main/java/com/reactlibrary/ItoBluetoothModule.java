@@ -8,10 +8,13 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import org.itoapp.DistanceCallback;
 import org.itoapp.TracingServiceInterface;
@@ -22,7 +25,6 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     private static final String LOG_TAG = "ItoBluetoothModule";
     private final ReactApplicationContext reactContext;
     private TracingServiceInterface tracingServiceInterface;
-    private Callback jsDistanceCallback;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className,
@@ -46,15 +48,10 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     private DistanceCallback.Stub nativeContactCallback = new DistanceCallback.Stub() {
         @Override
         public void onDistanceMeasurements(float[] distances) {
-            try {
-                if(jsDistanceCallback != null)
-                    jsDistanceCallback.invoke(distances);
-            }
-            catch(Exception e)
-            {
-                Log.e(LOG_TAG, "Exception occurred invoking javascript callback", e);
-                //TODO
-            }
+            Log.d(LOG_TAG, "emitting onDistancesChanged");
+            reactContext.
+                    getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                    .emit("onDistancesChanged", Arguments.fromArray(distances));
         }
     };
 
@@ -76,11 +73,5 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "ItoBluetooth";
-    }
-
-    @ReactMethod
-    public void setDistanceCallback(Callback advertisementCallback) {
-        Log.d(LOG_TAG, "SetDistanceCallback called from JS");
-        this.jsDistanceCallback = advertisementCallback;
     }
 }
