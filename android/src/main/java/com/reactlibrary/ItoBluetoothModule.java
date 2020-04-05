@@ -43,7 +43,13 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     private DistanceCallback.Stub nativeContactCallback = new DistanceCallback.Stub() {
         @Override
         public void onDistanceMeasurements(float[] distances) {
-            jsDistanceCallback.invoke(distances);
+            try {
+                jsDistanceCallback.invoke(distances);
+            }
+            catch(Exception e)
+            {
+                //TODO
+            }
         }
     };
 

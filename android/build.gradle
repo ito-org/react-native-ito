@@ -83,7 +83,6 @@ repositories {
 
 dependencies {
     //noinspection GradleDynamicVersion
-    implementation project(path: ':itoapp')
     implementation 'com.facebook.react:react-native:+'
     implementation files('android-app/gradle/wrapper/gradle-wrapper.jar')  // From node_modules
 }
