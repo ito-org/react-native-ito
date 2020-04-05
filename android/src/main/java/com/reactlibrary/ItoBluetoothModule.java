@@ -27,8 +27,10 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     private ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
+            Log.d(LOG_TAG, "Service connected");
             tracingServiceInterface = TracingServiceInterface.Stub.asInterface(service);
             try {
+                Log.d(LOG_TAG, "Registering callback");
                 tracingServiceInterface.setDistanceCallback(nativeContactCallback);
             } catch (RemoteException e) {
                 Log.e(LOG_TAG, "looks like the service already crashed!", e);
@@ -36,6 +38,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
         }
 
         public void onServiceDisconnected(ComponentName className) {
+            Log.d(LOG_TAG, "Service disconnected");
             tracingServiceInterface = null;
         }
     };
@@ -44,10 +47,12 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
         @Override
         public void onDistanceMeasurements(float[] distances) {
             try {
-                jsDistanceCallback.invoke(distances);
+                if(jsDistanceCallback != null)
+                    jsDistanceCallback.invoke(distances);
             }
             catch(Exception e)
             {
+                Log.e(LOG_TAG, "Exception occurred invoking javascript callback", e);
                 //TODO
             }
         }
@@ -55,6 +60,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
 
     public ItoBluetoothModule(ReactApplicationContext reactContext) {
         super(reactContext);
+        Log.d(LOG_TAG, "Creating ItoBluetoothModule");
         this.reactContext = reactContext;
         Intent intent = new Intent(reactContext, TracingService.class);
         reactContext.startService(intent);
@@ -62,6 +68,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     }
 
     private void bindService() {
+        Log.d(LOG_TAG, "binding service");
         Intent intent = new Intent(reactContext, TracingService.class);
         reactContext.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
@@ -73,6 +80,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void setDistanceCallback(Callback advertisementCallback) {
+        Log.d(LOG_TAG, "SetDistanceCallback called from JS");
         this.jsDistanceCallback = advertisementCallback;
     }
 }
