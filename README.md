@@ -9,6 +9,7 @@ This library is the native backend for the ito app. It does several things
 - store the data used to generate the TCNs
 - regularly poll the server for TCN reports and compare with the local database
 - upload TCN generation data from specified timeframes
+- provide some feedback for better UX
 
 ## Getting started
 
