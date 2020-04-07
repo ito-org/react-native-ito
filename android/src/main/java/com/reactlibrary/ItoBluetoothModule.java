@@ -3,6 +3,7 @@ package com.reactlibrary;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import androidx.core.content.ContextCompat;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -60,7 +61,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
         Log.d(LOG_TAG, "Creating ItoBluetoothModule");
         this.reactContext = reactContext;
         Intent intent = new Intent(reactContext, TracingService.class);
-        reactContext.startService(intent);
+        ContextCompat.startForegroundService(reactContext, intent);
         bindService();
     }
 
