@@ -11,7 +11,9 @@ import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -149,6 +151,11 @@ public class TracingService extends Service {
         if(Preconditions.canScanBluetooth(this)) {
             startBluetooth();
         }
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(LocationManager.MODE_CHANGED_ACTION);
+        registerReceiver(broadcastReceiver, filter);
     }
 
     @TargetApi(26)
@@ -187,6 +194,7 @@ public class TracingService extends Service {
         bleAdvertiser.stopAdvertising();
         bleScanner.stopScanning();
         contactCache.flush();
+        unregisterReceiver(broadcastReceiver);
         super.onDestroy();
     }
 
