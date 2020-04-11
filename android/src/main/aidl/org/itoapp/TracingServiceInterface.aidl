@@ -10,4 +10,6 @@ interface TracingServiceInterface {
     void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback);
 
     boolean isPossiblyInfected();
+
+    void restartTracingService();
 }

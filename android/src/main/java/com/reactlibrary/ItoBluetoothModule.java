@@ -92,6 +92,15 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
         }
     }
 
+    @ReactMethod
+    public void restartTracing() {
+        try {
+            tracingServiceInterface.restartTracingService();
+        } catch (RemoteException e) {
+            Log.e(LOG_TAG, "Could not get TracingService", e);
+        }
+    }
+
     private void bindService() {
         Log.d(LOG_TAG, "binding service");
         Intent intent = new Intent(reactContext, TracingService.class);
