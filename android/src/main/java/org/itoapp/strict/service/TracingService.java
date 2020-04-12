@@ -43,6 +43,7 @@ public class TracingService extends Service {
     private BleScanner bleScanner;
     private BleAdvertiser bleAdvertiser;
     private ContactCache contactCache;
+    private DistanceCallback contactCacheDistanceCallback;
     private ItoDBHelper dbHelper;
 
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -52,7 +53,7 @@ public class TracingService extends Service {
             if (!Preconditions.canScanBluetooth(context) && isBluetoothRunning()) {
                 stopBluetooth();
             }
-            if(Preconditions.canScanBluetooth(context) && !isBluetoothRunning()) {
+            if (Preconditions.canScanBluetooth(context) && !isBluetoothRunning()) {
                 startBluetooth();
             }
         }
@@ -61,8 +62,12 @@ public class TracingService extends Service {
     private TracingServiceInterface.Stub binder = new TracingServiceInterface.Stub() {
         @Override
         public void setDistanceCallback(DistanceCallback distanceCallback) {
-            contactCache.setDistanceCallback(distanceCallback);
+            if (contactCache != null)
+                contactCache.setDistanceCallback(distanceCallback);
+            else
+                contactCacheDistanceCallback = distanceCallback;
         }
+
 
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
@@ -94,7 +99,7 @@ public class TracingService extends Service {
         serviceHandler.postDelayed(this.regenerateUUID, Constants.UUID_VALID_INTERVAL);
     };
     //TODO move this to some alarmManager governed section.
-    // Also ideally check the server when connected to WIFI and charger
+// Also ideally check the server when connected to WIFI and charger
     private Runnable checkServer = () -> {
         new CheckServerTask(dbHelper).execute();
         serviceHandler.postDelayed(this.checkServer, Constants.CHECK_SERVER_INTERVAL);
@@ -127,6 +132,8 @@ public class TracingService extends Service {
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
 
         contactCache = new ContactCache(dbHelper, serviceHandler);
+        if (contactCacheDistanceCallback != null)
+            contactCache.setDistanceCallback(contactCacheDistanceCallback);
         bleScanner = new BleScanner(bluetoothAdapter, contactCache);
         bleAdvertiser = new BleAdvertiser(bluetoothAdapter, serviceHandler);
 
@@ -148,7 +155,7 @@ public class TracingService extends Service {
         serviceHandler = new Handler(serviceLooper);
         serviceHandler.post(this.checkServer);
 
-        if(Preconditions.canScanBluetooth(this)) {
+        if (Preconditions.canScanBluetooth(this)) {
             startBluetooth();
         }
 
