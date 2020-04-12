@@ -79,6 +79,12 @@ public class TracingService extends Service {
             //TODO do async
             return dbHelper.selectInfectedContacts().size() > 0;
         }
+
+        @Override
+        public void restartTracingService() {
+            stopBluetooth();
+            startBluetooth();
+        }
     };
 
     private Runnable regenerateUUID = () -> {
@@ -115,9 +121,13 @@ public class TracingService extends Service {
     }
 
     private void stopBluetooth() {
-        contactCache.flush();
-        bleScanner.stopScanning();
-        bleAdvertiser.stopAdvertising();
+        Log.i(LOG_TAG, "Stopping TracingService");
+        if (contactCache != null)
+            contactCache.flush();
+        if (bleScanner != null)
+            bleScanner.stopScanning();
+        if (bleAdvertiser != null)
+            bleAdvertiser.stopAdvertising();
 
         serviceHandler.removeCallbacks(regenerateUUID);
 
@@ -127,6 +137,7 @@ public class TracingService extends Service {
     }
 
     private void startBluetooth() {
+        Log.i(LOG_TAG, "Starting TracingService");
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         assert bluetoothManager != null;
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
