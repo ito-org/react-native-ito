@@ -120,9 +120,15 @@ public class TracingService extends Service {
         Log.i(LOG_TAG, "Stopping Bluetooth");
         contactCache.flush();
         if (bleScanner != null)
-            bleScanner.stopScanning();
+            try {
+                bleScanner.stopScanning();
+            }
+            catch(Exception ignored) {}
         if (bleAdvertiser != null)
-            bleAdvertiser.stopAdvertising();
+            try {
+                bleAdvertiser.stopAdvertising();
+            }
+            catch(Exception ignored) {}
 
         serviceHandler.removeCallbacks(regenerateUUID);
 
