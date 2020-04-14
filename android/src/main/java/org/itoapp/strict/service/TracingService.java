@@ -43,18 +43,17 @@ public class TracingService extends Service {
     private BleScanner bleScanner;
     private BleAdvertiser bleAdvertiser;
     private ContactCache contactCache;
-    private DistanceCallback contactCacheDistanceCallback;
     private ItoDBHelper dbHelper;
 
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context context, android.content.Intent intent) {
-            if (!Preconditions.canScanBluetooth(context) && isBluetoothRunning()) {
-                stopBluetooth();
-            }
-            if (Preconditions.canScanBluetooth(context) && !isBluetoothRunning()) {
+            if(!isBluetoothRunning()) {
                 startBluetooth();
+            }
+            else if(!Preconditions.canScanBluetooth(context)) {
+                stopBluetooth();
             }
         }
     };
@@ -62,10 +61,7 @@ public class TracingService extends Service {
     private TracingServiceInterface.Stub binder = new TracingServiceInterface.Stub() {
         @Override
         public void setDistanceCallback(DistanceCallback distanceCallback) {
-            if (contactCache != null)
-                contactCache.setDistanceCallback(distanceCallback);
-            else
-                contactCacheDistanceCallback = distanceCallback;
+            contactCache.setDistanceCallback(distanceCallback);
         }
 
 
@@ -121,9 +117,8 @@ public class TracingService extends Service {
     }
 
     private void stopBluetooth() {
-        Log.i(LOG_TAG, "Stopping TracingService");
-        if (contactCache != null)
-            contactCache.flush();
+        Log.i(LOG_TAG, "Stopping Bluetooth");
+        contactCache.flush();
         if (bleScanner != null)
             bleScanner.stopScanning();
         if (bleAdvertiser != null)
@@ -131,20 +126,20 @@ public class TracingService extends Service {
 
         serviceHandler.removeCallbacks(regenerateUUID);
 
-        contactCache = null;
         bleScanner = null;
         bleAdvertiser = null;
     }
 
     private void startBluetooth() {
-        Log.i(LOG_TAG, "Starting TracingService");
+        Log.i(LOG_TAG, "Starting Bluetooth");
+        if (!Preconditions.canScanBluetooth(this)) {
+            Log.w(LOG_TAG, "Preconditions for starting Bluetooth not met");
+            return;
+        }
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         assert bluetoothManager != null;
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
 
-        contactCache = new ContactCache(dbHelper, serviceHandler);
-        if (contactCacheDistanceCallback != null)
-            contactCache.setDistanceCallback(contactCacheDistanceCallback);
         bleScanner = new BleScanner(bluetoothAdapter, contactCache);
         bleAdvertiser = new BleAdvertiser(bluetoothAdapter, serviceHandler);
 
@@ -158,17 +153,16 @@ public class TracingService extends Service {
         super.onCreate();
         uuidGenerator = new SecureRandom();
         dbHelper = new ItoDBHelper(this);
-        HandlerThread thread = new HandlerThread("TrackerHandler", Thread.NORM_PRIORITY);
+        HandlerThread thread = new HandlerThread("TracingServiceHandler", Thread.NORM_PRIORITY);
         thread.start();
 
         // Get the HandlerThread's Looper and use it for our Handler
         serviceLooper = thread.getLooper();
         serviceHandler = new Handler(serviceLooper);
         serviceHandler.post(this.checkServer);
+        contactCache = new ContactCache(dbHelper, serviceHandler);
 
-        if (Preconditions.canScanBluetooth(this)) {
-            startBluetooth();
-        }
+        startBluetooth();
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
