@@ -87,6 +87,8 @@ public class ItoDBHelper extends SQLiteOpenHelper {
     private static final String DELETE_WHERE_CLAUSE =
             "julianday('now') - julianday(timestamp) > 14;";
 
+    private static final String INSERT_CONTACT =
+            "INSERT OR REPLACE INTO contacts(timestamp, hashed_uuid, proximity, duration) VALUES (datetime(?, 'unixepoch'), ?, ?, ?)";
 
     public ItoDBHelper(@Nullable Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -135,11 +137,14 @@ public class ItoDBHelper extends SQLiteOpenHelper {
         checkHashedUUID(hashed_uuid);
 
         SQLiteDatabase database = getWritableDatabase();
-        ContentValues contentValues = new ContentValues(3);
-        contentValues.put("hashed_uuid", hashed_uuid);
-        contentValues.put("proximity", proximity);
-        contentValues.put("duration", duration);
-        database.insertOrThrow("contacts", null, contentValues);
+        //ContentValues contentValues = new ContentValues(4);
+        //contentValues.put("timestamp", System.currentTimeMillis() / 1000 - duration);
+        //contentValues.put("hashed_uuid", hashed_uuid);
+        //contentValues.put("proximity", proximity);
+        //contentValues.put("duration", duration);
+        //database.insertWithOnConflict("contacts", null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
+
+        database.execSQL(INSERT_CONTACT, new Object[]{(System.currentTimeMillis() - duration)/ 1000, hashed_uuid, proximity, duration});
     }
 
     public synchronized void insertInfected(byte[] uuid) {
