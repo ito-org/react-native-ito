@@ -49,11 +49,11 @@ public class TracingService extends Service {
 
         @Override
         public void onReceive(Context context, android.content.Intent intent) {
-            if (!Preconditions.canScanBluetooth(context) && isBluetoothRunning()) {
-                stopBluetooth();
-            }
-            if(Preconditions.canScanBluetooth(context) && !isBluetoothRunning()) {
+            if(!isBluetoothRunning()) {
                 startBluetooth();
+            }
+            else if(!Preconditions.canScanBluetooth(context)) {
+                stopBluetooth();
             }
         }
     };
@@ -64,6 +64,7 @@ public class TracingService extends Service {
             contactCache.setDistanceCallback(distanceCallback);
         }
 
+
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
             new PublishBeaconsTask(dbHelper, from, to, callback).execute();
@@ -73,6 +74,12 @@ public class TracingService extends Service {
         public boolean isPossiblyInfected() {
             //TODO do async
             return dbHelper.selectInfectedContacts().size() > 0;
+        }
+
+        @Override
+        public void restartTracingService() {
+            stopBluetooth();
+            startBluetooth();
         }
     };
 
@@ -94,7 +101,7 @@ public class TracingService extends Service {
         serviceHandler.postDelayed(this.regenerateUUID, Constants.UUID_VALID_INTERVAL);
     };
     //TODO move this to some alarmManager governed section.
-    // Also ideally check the server when connected to WIFI and charger
+// Also ideally check the server when connected to WIFI and charger
     private Runnable checkServer = () -> {
         new CheckServerTask(dbHelper).execute();
         serviceHandler.postDelayed(this.checkServer, Constants.CHECK_SERVER_INTERVAL);
@@ -110,23 +117,35 @@ public class TracingService extends Service {
     }
 
     private void stopBluetooth() {
+        Log.i(LOG_TAG, "Stopping Bluetooth");
         contactCache.flush();
-        bleScanner.stopScanning();
-        bleAdvertiser.stopAdvertising();
+        if (bleScanner != null)
+            try {
+                bleScanner.stopScanning();
+            }
+            catch(Exception ignored) {}
+        if (bleAdvertiser != null)
+            try {
+                bleAdvertiser.stopAdvertising();
+            }
+            catch(Exception ignored) {}
 
         serviceHandler.removeCallbacks(regenerateUUID);
 
-        contactCache = null;
         bleScanner = null;
         bleAdvertiser = null;
     }
 
     private void startBluetooth() {
+        Log.i(LOG_TAG, "Starting Bluetooth");
+        if (!Preconditions.canScanBluetooth(this)) {
+            Log.w(LOG_TAG, "Preconditions for starting Bluetooth not met");
+            return;
+        }
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         assert bluetoothManager != null;
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
 
-        contactCache = new ContactCache(dbHelper, serviceHandler);
         bleScanner = new BleScanner(bluetoothAdapter, contactCache);
         bleAdvertiser = new BleAdvertiser(bluetoothAdapter, serviceHandler);
 
@@ -140,17 +159,16 @@ public class TracingService extends Service {
         super.onCreate();
         uuidGenerator = new SecureRandom();
         dbHelper = new ItoDBHelper(this);
-        HandlerThread thread = new HandlerThread("TrackerHandler", Thread.NORM_PRIORITY);
+        HandlerThread thread = new HandlerThread("TracingServiceHandler", Thread.NORM_PRIORITY);
         thread.start();
 
         // Get the HandlerThread's Looper and use it for our Handler
         serviceLooper = thread.getLooper();
         serviceHandler = new Handler(serviceLooper);
         serviceHandler.post(this.checkServer);
+        contactCache = new ContactCache(dbHelper, serviceHandler);
 
-        if(Preconditions.canScanBluetooth(this)) {
-            startBluetooth();
-        }
+        startBluetooth();
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
