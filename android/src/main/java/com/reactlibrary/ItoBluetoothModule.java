@@ -73,6 +73,17 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
         }
     }
 
+    //make this method synchronous because it has to return a boolean
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public int getLatestFetchTime() {
+        try {
+            return tracingServiceInterface.getLatestFetchTime();
+        } catch (RemoteException e) {
+            Log.e(LOG_TAG, "Could not get latest fetch time", e);
+            return -1;
+        }
+    }
+
     @ReactMethod
     public void publishBeaconUUIDs(int from, int to, Callback callback) {
         try {

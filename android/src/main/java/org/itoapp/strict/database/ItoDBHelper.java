@@ -25,6 +25,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
 
     private static final String BEACON_TABLE_NAME = "beacons";
     private static final String INFECTED_TABLE_NAME = "infected";
+    private static final String SUMMARY_TABLE_NAME = "summary";
 
     private static final String CREATE_BEACON_TABLE =
             "CREATE TABLE "+BEACON_TABLE_NAME+" (" +
@@ -35,6 +36,11 @@ public class ItoDBHelper extends SQLiteOpenHelper {
 
     private static final String CREATE_BEACON_TIMESTAMP_INDEX =
             "CREATE UNIQUE INDEX beacon_timestamp ON "+BEACON_TABLE_NAME+" (timestamp);";
+
+    private static final String CREATE_SUMMARY_TABLE =
+            "CREATE TABLE " + SUMMARY_TABLE_NAME + " (" +
+                    "latest_fetch_timestamp DATETIME DEFAULT NULL" +
+                    ");";
 
     private static final String CREATE_INFECTED_TABLE =
             "CREATE TABLE " + INFECTED_TABLE_NAME + " (" +
@@ -74,6 +80,12 @@ public class ItoDBHelper extends SQLiteOpenHelper {
                     "(SELECT MAX(id) from " + INFECTED_TABLE_NAME + ") - ABS(RANDOM() % 10)," +
                     "0);";
 
+    private static final String SELECT_LAST_FETCH_TIME =
+            "SELECT latest_fetch_timestamp FROM " + SUMMARY_TABLE_NAME + ";";
+
+    private static final String UPDATE_LATEST_FETCH_TIME =
+            "UPDATE " + SUMMARY_TABLE_NAME + "SET latest_fetch_timestamp = CURRENT_TIMESTAMP;";
+
     private static final String DELETE_WHERE_CLAUSE =
             "julianday('now') - julianday(timestamp) > 14;";
 
@@ -91,6 +103,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_INFECTED_UUID_INDEX);
         db.execSQL(CREATE_CONTACT_TABLE);
         db.execSQL(CREATE_CONTACT_HASHED_UUID_INDEX);
+        db.execSQL(CREATE_SUMMARY_TABLE);
     }
 
     @Override
@@ -192,6 +205,25 @@ public class ItoDBHelper extends SQLiteOpenHelper {
         int uuidColumnIndex = cursor.getColumnIndexOrThrow("uuid");
         if (cursor.moveToNext())
             result = cursor.getBlob(uuidColumnIndex);
+        cursor.close();
+        return result;
+    }
+
+    public synchronized void updateLatestFetchTime() {
+        Log.d(LOG_TAG, "Updating latest fetch time");
+        SQLiteDatabase database = getWritableDatabase();
+        database.execSQL(UPDATE_LATEST_FETCH_TIME);
+    }
+
+    public synchronized int getLatestFetchTime() {
+        Log.d(LOG_TAG, "Getting latest fetch time");
+        SQLiteDatabase database = getReadableDatabase();
+
+        Cursor cursor = database.rawQuery(SELECT_LAST_FETCH_TIME, null);
+        int result = -1;
+        int lastTimestampColumnIndex = cursor.getColumnIndexOrThrow("last_timestamp");
+        if (cursor.moveToNext())
+            result = cursor.getInt(lastTimestampColumnIndex);
         cursor.close();
         return result;
     }

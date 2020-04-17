@@ -12,4 +12,6 @@ interface TracingServiceInterface {
     boolean isPossiblyInfected();
 
     void restartTracingService();
+
+    int getLatestFetchTime();
 }

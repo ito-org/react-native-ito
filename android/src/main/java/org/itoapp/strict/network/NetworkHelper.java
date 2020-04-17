@@ -44,7 +44,7 @@ public class NetworkHelper {
                 uuidToBytes(uuid, uuidBytes);
                 dbHelper.insertInfected(uuidBytes);
             }
-
+            dbHelper.updateLatestFetchTime();
         } catch (MalformedURLException e) {
             Log.wtf(LOG_TAG, "Malformed URL?!", e);
             throw new RuntimeException(e);
