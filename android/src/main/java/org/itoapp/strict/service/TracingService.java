@@ -81,6 +81,11 @@ public class TracingService extends Service {
             stopBluetooth();
             startBluetooth();
         }
+
+        @Override
+        public int getLatestFetchTime() {
+            return dbHelper.getLatestFetchTime();
+        }
     };
 
     private Runnable regenerateUUID = () -> {
