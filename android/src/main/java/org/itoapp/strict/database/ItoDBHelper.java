@@ -84,7 +84,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
             "SELECT latest_fetch_timestamp FROM " + SUMMARY_TABLE_NAME + ";";
 
     private static final String UPDATE_LATEST_FETCH_TIME =
-            "UPDATE " + SUMMARY_TABLE_NAME + "SET latest_fetch_timestamp = CURRENT_TIMESTAMP;";
+            "UPDATE " + SUMMARY_TABLE_NAME + " SET latest_fetch_timestamp = CURRENT_TIMESTAMP;";
 
     private static final String DELETE_WHERE_CLAUSE =
             "julianday('now') - julianday(timestamp) > 14;";
