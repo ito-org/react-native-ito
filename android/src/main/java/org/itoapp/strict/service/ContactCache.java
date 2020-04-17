@@ -67,6 +67,8 @@ public class ContactCache {
         if (distances.size() == Constants.DISTANCE_SMOOTHING_MA_LENGTH) {
             entry.lowestDistance = Math.min(calculateDistance(entry), entry.lowestDistance);
             distances.popLast();
+            int contactDuration = (int) (entry.lastReceived - entry.firstReceived);
+            dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
         }
         if (distanceCallback != null) {
             try {
