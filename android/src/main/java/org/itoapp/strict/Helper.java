@@ -32,17 +32,16 @@ public class Helper {
         return Arrays.copyOf(sha256Hash, HASH_LENGTH);
     }
 
-    public static void uuidToBytes(UUID uuid, byte[] result) {
-        ByteBuffer bb = ByteBuffer.wrap(result);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-    }
+    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    public static UUID bytesToUUID(byte[] bytes) {
-        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-        Long high = byteBuffer.getLong();
-        Long low = byteBuffer.getLong();
+    public static String encodeHexString(byte[] data) {
+        StringBuilder result = new StringBuilder();
+        // two characters form the hex value.
+        for (byte b : data) {
+            result.append(HEX_DIGITS[(0xF0 & b) >>> 4]);
+            result.append(HEX_DIGITS[0x0F & b]);
+        }
+        return result.toString();
 
-        return new UUID(high, low);
     }
 }
