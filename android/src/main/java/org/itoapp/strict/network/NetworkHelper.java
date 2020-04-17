@@ -2,25 +2,20 @@ package org.itoapp.strict.network;
 
 import android.util.Log;
 
-import org.itoapp.strict.Helper;
 import org.itoapp.strict.database.ItoDBHelper;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
-import static org.itoapp.strict.Helper.bytesToUUID;
-import static org.itoapp.strict.Helper.uuidToBytes;
 import static org.itoapp.strict.Constants.UUID_LENGTH;
+import static org.itoapp.strict.Helper.encodeHexString;
 
 public class NetworkHelper {
 
@@ -29,22 +24,19 @@ public class NetworkHelper {
 
     public static void refreshInfectedUUIDs(ItoDBHelper dbHelper) {
         byte[] lastInfectedUUID = dbHelper.selectRandomLastUUID();
-        UUID lastInfectedUUID2 = lastInfectedUUID == null ? UUID.randomUUID() : Helper.bytesToUUID(lastInfectedUUID);
         HttpURLConnection urlConnection = null;
         try {
             //TODO use a more sophisticated library
-            String appendix = "?uuid=" + lastInfectedUUID2.toString();
-            URL url = new URL(BASE_URL + "/pull/v0/cases" + appendix);
+            String appendix = lastInfectedUUID == null? "": "?uuid=" + encodeHexString(lastInfectedUUID);
+            URL url = new URL(BASE_URL + "/get_uuids" + appendix);
             urlConnection = (HttpURLConnection) url.openConnection();
-            InputStreamReader inputStreamReader = new InputStreamReader(new BufferedInputStream(urlConnection.getInputStream()));
+            urlConnection.addRequestProperty("Accept", "application/octet-stream");
+            InputStream inputStream = new BufferedInputStream(urlConnection.getInputStream());
             byte[] uuidBytes = new byte[UUID_LENGTH];
-            char[] tempBuffer = new char[37];
-            while (inputStreamReader.read(tempBuffer) == tempBuffer.length) {
-                UUID uuid = UUID.fromString(new String(tempBuffer, 0, 36));
-                uuidToBytes(uuid, uuidBytes);
+            while (inputStream.read(uuidBytes) == uuidBytes.length) {
                 dbHelper.insertInfected(uuidBytes);
             }
-            dbHelper.updateLatestFetchTime();
+
         } catch (MalformedURLException e) {
             Log.wtf(LOG_TAG, "Malformed URL?!", e);
             throw new RuntimeException(e);
@@ -56,34 +48,23 @@ public class NetworkHelper {
         }
     }
 
-    private static void writeUUIDJson(byte[] uuid, Writer outputStreamWriter) throws IOException {
-        outputStreamWriter.write("{\"uuid\":\"" + bytesToUUID(uuid).toString() + "\"}");
-    }
 
     public static void publishUUIDs(List<byte[]> beacons) throws IOException {
         HttpURLConnection urlConnection = null;
         try {
-            URL url = new URL(BASE_URL + "/push/v0/cases/report");
+            URL url = new URL(BASE_URL + "/post_uuids");
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoOutput(true);
-            urlConnection.addRequestProperty("Content-Type", "application/json");
-            Writer outputStreamWriter = new OutputStreamWriter(new BufferedOutputStream(urlConnection.getOutputStream()));
-            outputStreamWriter.write("[");
-
-            Iterator<byte[]> iterator = beacons.iterator();
-            if (iterator.hasNext())
-                writeUUIDJson(iterator.next(), outputStreamWriter);
-
-            while (iterator.hasNext()) {
-                outputStreamWriter.write(",");
-                writeUUIDJson(iterator.next(), outputStreamWriter);
+            urlConnection.addRequestProperty("Content-Type", "application/octet-stream");
+            OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
+            for(byte[] beacon: beacons) {
+                outputStream.write(beacon);
             }
-            outputStreamWriter.write("]");
-            outputStreamWriter.close();
+            outputStream.close();
 
-            InputStreamReader inputStreamReader = new InputStreamReader(new BufferedInputStream(urlConnection.getInputStream()));
-            inputStreamReader.read();
-            inputStreamReader.close();
+            InputStream inputStream = urlConnection.getInputStream();
+            inputStream.read();
+            inputStream.close();
         } catch (MalformedURLException e) {
             Log.wtf(LOG_TAG, "Malformed URL?!", e);
             throw new RuntimeException(e);
