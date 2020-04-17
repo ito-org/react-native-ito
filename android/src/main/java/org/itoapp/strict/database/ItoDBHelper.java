@@ -39,6 +39,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
 
     private static final String CREATE_SUMMARY_TABLE =
             "CREATE TABLE " + SUMMARY_TABLE_NAME + " (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "latest_fetch_timestamp DATETIME DEFAULT NULL" +
                     ");";
 
@@ -80,11 +81,8 @@ public class ItoDBHelper extends SQLiteOpenHelper {
                     "(SELECT MAX(id) from " + INFECTED_TABLE_NAME + ") - ABS(RANDOM() % 10)," +
                     "0);";
 
-    private static final String SELECT_LATEST_FETCH_TIME =
+    private static final String SELECT_LAST_FETCH_TIME =
             "SELECT latest_fetch_timestamp FROM " + SUMMARY_TABLE_NAME + ";";
-
-    private static final String UPDATE_LATEST_FETCH_TIME =
-            "UPDATE " + SUMMARY_TABLE_NAME + " SET latest_fetch_timestamp = CURRENT_TIMESTAMP;";
 
     private static final String DELETE_WHERE_CLAUSE =
             "julianday('now') - julianday(timestamp) > 14;";
@@ -212,14 +210,17 @@ public class ItoDBHelper extends SQLiteOpenHelper {
     public synchronized void updateLatestFetchTime() {
         Log.d(LOG_TAG, "Updating latest fetch time");
         SQLiteDatabase database = getWritableDatabase();
-        database.execSQL(UPDATE_LATEST_FETCH_TIME);
+        ContentValues contentValues = new ContentValues(2);
+        contentValues.put("id", 1);
+        contentValues.put("latest_fetch_timestamp", (int)(System.currentTimeMillis() / 1000));
+        database.insertWithOnConflict(SUMMARY_TABLE_NAME, null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
     public synchronized int getLatestFetchTime() {
         Log.d(LOG_TAG, "Getting latest fetch time");
         SQLiteDatabase database = getReadableDatabase();
 
-        Cursor cursor = database.rawQuery(SELECT_LATEST_FETCH_TIME, null);
+        Cursor cursor = database.rawQuery(SELECT_LAST_FETCH_TIME, null);
         int result = -1;
         int lastTimestampColumnIndex = cursor.getColumnIndexOrThrow("latest_fetch_timestamp");
         if (cursor.moveToNext())
