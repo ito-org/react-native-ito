@@ -80,7 +80,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
                     "(SELECT MAX(id) from " + INFECTED_TABLE_NAME + ") - ABS(RANDOM() % 10)," +
                     "0);";
 
-    private static final String SELECT_LAST_FETCH_TIME =
+    private static final String SELECT_LATEST_FETCH_TIME =
             "SELECT latest_fetch_timestamp FROM " + SUMMARY_TABLE_NAME + ";";
 
     private static final String UPDATE_LATEST_FETCH_TIME =
@@ -219,9 +219,9 @@ public class ItoDBHelper extends SQLiteOpenHelper {
         Log.d(LOG_TAG, "Getting latest fetch time");
         SQLiteDatabase database = getReadableDatabase();
 
-        Cursor cursor = database.rawQuery(SELECT_LAST_FETCH_TIME, null);
+        Cursor cursor = database.rawQuery(SELECT_LATEST_FETCH_TIME, null);
         int result = -1;
-        int lastTimestampColumnIndex = cursor.getColumnIndexOrThrow("last_timestamp");
+        int lastTimestampColumnIndex = cursor.getColumnIndexOrThrow("latest_fetch_timestamp");
         if (cursor.moveToNext())
             result = cursor.getInt(lastTimestampColumnIndex);
         cursor.close();
