@@ -22,24 +22,34 @@ This library is the native backend for the ito app. It does several things
 `$ react-native link react-native-ito-bluetooth`
 
 ## Usage
-```javascript
+Retrieve the native module.
+```js
 import {NativeModules, NativeEventEmitter} from 'react-native';
 
-// start tracing (after getting location permission for Bluetooth advertising and scanning)
-NativeModules.ItoBluetooth.restartTracing();
+const { ItoBluetooth } = NativeModules;
+```
 
-const eventEmitter = new NativeEventEmitter(NativeModules.ItoBluetooth);
+Start tracing (after getting location permission for Bluetooth advertising and scanning):
+```javascript
+ItoBluetooth.restartTracing();
+```
+Get the current and recent distances of ito devices in the vicinity.
+```js
+const eventEmitter = new NativeEventEmitter(ItoBluetooth);
 this.eventListener = eventEmitter.addListener('onDistancesChanged', (distances) => {
   //get notified about the distances to nearby devices
 });
+```
+Find out whether the user is likely to have been in contact with an infected user
+```js
+ItoBluetooth.isPossiblyInfected() // boolean
+```
 
-// whether the user is likely to have been in contact with an infected user
-NativeModules.ItoBluetooth.isPossiblyInfected()
-
-// upload the user's own TCNs of the last 7 days
+Upload the user's own TCNs of the last 7 days
+```js
 const nowSeconds = Date.now() / 1000;
 const sevenDaysAgo = nowSeconds - 7 * 24 * 60 * 60;
-NativeModules.ItoBluetooth.publishBeaconUUIDs(
+ItoBluetooth.publishBeaconUUIDs(
   sevenDaysAgo,
   now,
   (success) => {
