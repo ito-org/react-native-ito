@@ -73,7 +73,11 @@ public class TracingService extends Service {
         @Override
         public boolean isPossiblyInfected() {
             //TODO do async
-            return dbHelper.selectInfectedContacts().size() > 0;
+            long totalExposureDuration = 0;
+            for(ItoDBHelper.ContactResult contact:dbHelper.selectInfectedContacts()) {
+                totalExposureDuration += contact.duration;
+            }
+            return totalExposureDuration > Constants.MIN_EXPOSURE_DURATION;
         }
 
         @Override

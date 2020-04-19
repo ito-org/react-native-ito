@@ -8,5 +8,8 @@ public class Constants {
     public static final int UUID_VALID_INTERVAL = 1000 * 60 * 30; //ms * sec * 30 min
     public static final int CHECK_SERVER_INTERVAL = 1000 * 10; //ms * 10 sec
     public static final int DISTANCE_SMOOTHING_MA_LENGTH = 7;
+    public static final int CACHE_FLUSH_TIME = 1000 * 60 * 2; // 2 minutes
     public static final long MIN_CONTACT_DURATION = 1000 * 60 * 3; //discard all contacts less than 3 minutes
+    public static final float MIN_SCANNING_DISTANCE = 20;
+    public static final long MIN_EXPOSURE_DURATION = 1000 * 60 * 5; // 5 minutes
 }

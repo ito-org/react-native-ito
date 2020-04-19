@@ -36,6 +36,8 @@ public class ContactCache {
         if (contactDuration > Constants.MIN_CONTACT_DURATION)
             dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
         cache.remove(hash);
+
+        reportDistances();
     }
 
     public void flush() {
@@ -60,7 +62,7 @@ public class ContactCache {
 
         // postpone flushing
         serviceHandler.removeCallbacks(entry.flushRunnable);
-        serviceHandler.postDelayed(entry.flushRunnable, Constants.UUID_VALID_INTERVAL);
+        serviceHandler.postDelayed(entry.flushRunnable, Constants.CACHE_FLUSH_TIME);
 
         CircularArray<Float> distances = entry.distances;
         distances.addFirst(distance);
@@ -70,6 +72,11 @@ public class ContactCache {
             int contactDuration = (int) (entry.lastReceived - entry.firstReceived);
             dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
         }
+        reportDistances();
+    }
+
+    private void reportDistances() {
+
         if (distanceCallback != null) {
             try {
                 distanceCallback.onDistanceMeasurements(calculateDistances());

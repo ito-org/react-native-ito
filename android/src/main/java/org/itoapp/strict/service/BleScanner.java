@@ -10,6 +10,8 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Build;
 import android.util.Log;
 
+import org.itoapp.strict.Constants;
+
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -58,9 +60,11 @@ public class BleScanner {
                 // TODO take antenna attenuation into account
                 float distance = (float) Math.pow(10F, ((float) txPower - rssi) / (10 * 2));
 
+                if(distance < Constants.MIN_SCANNING_DISTANCE)
+                    contactCache.addReceivedBroadcast(receivedHash, distance);
+
                 Log.d(LOG_TAG, Arrays.toString(receivedHash) + ":" + distance);
 
-                contactCache.addReceivedBroadcast(receivedHash, distance);
             }
         };
 
