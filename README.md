@@ -1,6 +1,6 @@
 # ito library for React Native apps
 
-![License](https://img.shields.io/github/license/ito-org/react-native-ito-bluetooth)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause--Clear-brightgreen)](LICENSE)
 
 ## What it does
 
