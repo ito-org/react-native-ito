@@ -96,7 +96,7 @@ public class TCNProtoGen {
         byte[] symptomData = "symptom data".getBytes();
         ByteBuffer memo = ByteBuffer.allocate(2 + symptomData.length);
         memo.order(ByteOrder.LITTLE_ENDIAN);
-        memo.put((byte) 0); // 0x0: CoEpi symptom report v1;
+        memo.put((byte) 2); // 0x2: ITO symptom report v1;
         memo.put((byte) symptomData.length);
         memo.put(symptomData);
         return memo.array();
