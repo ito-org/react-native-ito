@@ -24,6 +24,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "ito.db";
 
     private static final String BEACON_TABLE_NAME = "beacons";
+    private static final String CONTACTS_TABLE_NAME = "contacts";
     private static final String INFECTED_TABLE_NAME = "infected";
     private static final String SUMMARY_TABLE_NAME = "summary";
 
@@ -58,7 +59,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
             "CREATE UNIQUE INDEX " + INFECTED_TABLE_NAME + "_uuid ON infected (uuid);";
 
     private static final String CREATE_CONTACT_TABLE =
-            "CREATE TABLE contacts (" +
+            "CREATE TABLE " + CONTACTS_TABLE_NAME + " (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP," +
                     "hashed_uuid BLOB NOT NULL UNIQUE ON CONFLICT IGNORE," +
@@ -67,11 +68,11 @@ public class ItoDBHelper extends SQLiteOpenHelper {
                     ");";
 
     private static final String CREATE_CONTACT_HASHED_UUID_INDEX =
-            "CREATE UNIQUE INDEX contact_hashed_uuid ON contacts (hashed_uuid);";
+            "CREATE UNIQUE INDEX contact_hashed_uuid ON " + CONTACTS_TABLE_NAME + " (hashed_uuid);";
 
     private static final String SELECT_INFECTED_CONTACTS =
             "SELECT contact.proximity, contact.duration " +
-                    "FROM contacts contact, " + INFECTED_TABLE_NAME + " infected " +
+                    "FROM " + CONTACTS_TABLE_NAME + " contact, " + INFECTED_TABLE_NAME + " infected " +
                     "WHERE contact.timestamp < infected.timestamp AND " +
                     "contact.hashed_uuid = infected.hashed_uuid;";
 
@@ -88,7 +89,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
             "julianday('now') - julianday(timestamp) > 14;";
 
     private static final String INSERT_CONTACT =
-            "INSERT OR REPLACE INTO contacts(timestamp, hashed_uuid, proximity, duration) VALUES (datetime(?, 'unixepoch'), ?, ?, ?)";
+            "INSERT OR REPLACE INTO " + CONTACTS_TABLE_NAME + "(timestamp, hashed_uuid, proximity, duration) VALUES (datetime(?, 'unixepoch'), ?, ?, ?)";
 
     public ItoDBHelper(@Nullable Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -142,7 +143,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
         //contentValues.put("hashed_uuid", hashed_uuid);
         //contentValues.put("proximity", proximity);
         //contentValues.put("duration", duration);
-        //database.insertWithOnConflict("contacts", null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
+        //database.insertWithOnConflict(CONTACTS_TABLE_NAME, null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
 
         database.execSQL(INSERT_CONTACT, new Object[]{(System.currentTimeMillis() - duration)/ 1000, hashed_uuid, proximity, duration});
     }
@@ -240,7 +241,7 @@ public class ItoDBHelper extends SQLiteOpenHelper {
         SQLiteDatabase database = getWritableDatabase();
         database.delete(BEACON_TABLE_NAME, DELETE_WHERE_CLAUSE, null);
         database.delete(INFECTED_TABLE_NAME, DELETE_WHERE_CLAUSE, null);
-        database.delete("contacts", DELETE_WHERE_CLAUSE, null);
+        database.delete(CONTACTS_TABLE_NAME, DELETE_WHERE_CLAUSE, null);
     }
 
     public static class ContactResult {
