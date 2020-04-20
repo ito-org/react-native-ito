@@ -68,7 +68,7 @@ public class TracingService extends Service {
 
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
-            new PublishBeaconsTask(dbHelper, from, to, callback).execute();
+            new PublishBeaconsTask(tcnProto.generateReport(new Long(from).intValue()), callback).execute();
         }
 
         @Override

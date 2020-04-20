@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 
 import static org.itoapp.strict.Constants.UUID_LENGTH;
 import static org.itoapp.strict.Helper.encodeHexString;
@@ -20,7 +19,7 @@ import static org.itoapp.strict.Helper.encodeHexString;
 public class NetworkHelper {
 
     private static final String LOG_TAG = "InfectedUUIDRepository";
-    private static final String BASE_URL = "https://api.ito-app.org";
+    private static final String BASE_URL = "https://api.ito-app.org/tcnreport";
 
     public static void refreshInfectedUUIDs(ItoDBHelper dbHelper) {
         byte[] lastInfectedUUID = dbHelper.selectRandomLastUUID();
@@ -28,7 +27,7 @@ public class NetworkHelper {
         try {
             //TODO use a more sophisticated library
             String appendix = lastInfectedUUID == null? "": "?uuid=" + encodeHexString(lastInfectedUUID);
-            URL url = new URL(BASE_URL + "/get_uuids" + appendix);
+            URL url = new URL(BASE_URL);
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.addRequestProperty("Accept", "application/octet-stream");
             InputStream inputStream = new BufferedInputStream(urlConnection.getInputStream());
@@ -49,17 +48,15 @@ public class NetworkHelper {
     }
 
 
-    public static void publishUUIDs(List<byte[]> beacons) throws IOException {
+    public static void publishReport(byte[] report) throws IOException {
         HttpURLConnection urlConnection = null;
         try {
-            URL url = new URL(BASE_URL + "/post_uuids");
+            URL url = new URL(BASE_URL);
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoOutput(true);
             urlConnection.addRequestProperty("Content-Type", "application/octet-stream");
             OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
-            for(byte[] beacon: beacons) {
-                outputStream.write(beacon);
-            }
+            outputStream.write(report);
             outputStream.close();
 
             InputStream inputStream = urlConnection.getInputStream();

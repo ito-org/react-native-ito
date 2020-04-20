@@ -12,22 +12,20 @@ import java.io.IOException;
 
 class PublishBeaconsTask extends AsyncTask<Void, Void, Void> {
     private static final String LOG_TAG = "PublishBeaconsTask";
-    private ItoDBHelper dbHelper;
+    private byte[] report;
     private long from;
     private long to;
     private PublishUUIDsCallback callback;
 
-    public PublishBeaconsTask(ItoDBHelper dbHelper, long from, long to, PublishUUIDsCallback callback) {
-        this.dbHelper = dbHelper;
-        this.from = from;
-        this.to = to;
+    public PublishBeaconsTask(byte[] report, PublishUUIDsCallback callback) {
+        this.report = report;
         this.callback = callback;
     }
 
     @Override
     protected Void doInBackground(Void... voids) {
         try {
-            NetworkHelper.publishUUIDs(dbHelper.selectBeacons(from, to));
+            NetworkHelper.publishReport(report);
             try {
                 callback.onSuccess();
             } catch (RemoteException e) {

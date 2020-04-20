@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import cafe.cryptography.ed25519.Ed25519PrivateKey;
-import cafe.cryptography.ed25519.Ed25519PublicKey;
 
 public class TCNProtoGen {
 
@@ -86,7 +85,7 @@ public class TCNProtoGen {
 
         payload.put(memo);
 
-        byte [] sig = Ed25519PrivateKey.fromByteArray(rak).expand().sign(payload.array(), Ed25519PrivateKey.fromByteArray(rak).derivePublic()).toByteArray());
+        byte [] sig = Ed25519PrivateKey.fromByteArray(rak).expand().sign(payload.array(), Ed25519PrivateKey.fromByteArray(rak).derivePublic()).toByteArray();
         ByteBuffer ret = ByteBuffer.allocate(totalPayloadbytes + sig.length);
         ret.put(payload.array());
         ret.put(sig);
