@@ -10,8 +10,6 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Build;
 import android.util.Log;
 
-import org.itoapp.strict.Constants;
-
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -52,15 +50,14 @@ public class BleScanner {
                     return;
                 }
 
-                byte txPower = receivedHash[HASH_LENGTH];
                 receivedHash = Arrays.copyOf(receivedHash, HASH_LENGTH);
 
                 int rssi = result.getRssi();
 
                 // TODO take antenna attenuation into account
-                float distance = (float) Math.pow(10F, ((float) txPower - rssi) / (10 * 2));
+                float distance = rssi;
 
-                if(distance < Constants.MIN_SCANNING_DISTANCE)
+             //   if(distance < Constants.MIN_SCANNING_DISTANCE) FIXME
                     contactCache.addReceivedBroadcast(receivedHash, distance);
 
                 Log.d(LOG_TAG, Arrays.toString(receivedHash) + ":" + distance);

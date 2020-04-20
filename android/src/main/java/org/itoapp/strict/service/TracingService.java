@@ -37,6 +37,7 @@ public class TracingService extends Service {
     private static final String LOG_TAG = "TracingService";
     private static final String DEFAULT_NOTIFICATION_CHANNEL = "ContactTracing";
     private static final int NOTIFICATION_ID = 1;
+    private TCNProtoGen tcnProto = new TCNProtoGen();
     private SecureRandom uuidGenerator;
     private Looper serviceLooper;
     private Handler serviceHandler;
@@ -95,7 +96,7 @@ public class TracingService extends Service {
     private Runnable regenerateUUID = () -> {
         Log.i(LOG_TAG, "Regenerating UUID");
 
-        byte[] uuid = new byte[Constants.UUID_LENGTH];
+      /*  byte[] uuid = new byte[Constants.UUID_LENGTH];
         uuidGenerator.nextBytes(uuid);
         byte[] hashedUUID = Helper.calculateTruncatedSHA256(uuid);
 
@@ -104,8 +105,9 @@ public class TracingService extends Service {
         byte[] broadcastData = new byte[Constants.BROADCAST_LENGTH];
         broadcastData[Constants.BROADCAST_LENGTH - 1] = getTransmitPower();
         System.arraycopy(hashedUUID, 0, broadcastData, 0, Constants.HASH_LENGTH);
+*/
 
-        bleAdvertiser.setBroadcastData(broadcastData);
+        bleAdvertiser.setBroadcastData(tcnProto.getNewTCN());
 
         serviceHandler.postDelayed(this.regenerateUUID, Constants.UUID_VALID_INTERVAL);
     };
@@ -116,10 +118,6 @@ public class TracingService extends Service {
         serviceHandler.postDelayed(this.checkServer, Constants.CHECK_SERVER_INTERVAL);
     };
 
-    private byte getTransmitPower() {
-        // TODO look up transmit power for current device
-        return (byte) -65;
-    }
 
     private boolean isBluetoothRunning() {
         return bleScanner != null;
