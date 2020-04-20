@@ -2,9 +2,6 @@ package org.itoapp.strict.network;
 
 import android.util.Log;
 
-import org.itoapp.strict.database.ItoDBHelper;
-
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,37 +10,46 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static org.itoapp.strict.Constants.UUID_LENGTH;
 import static org.itoapp.strict.Helper.encodeHexString;
 
 public class NetworkHelper {
 
     private static final String LOG_TAG = "InfectedUUIDRepository";
-    private static final String BASE_URL = "https://api.ito-app.org/tcnreport";
+    private static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
 
-    public static void refreshInfectedUUIDs(ItoDBHelper dbHelper) {
-        byte[] lastInfectedUUID = dbHelper.selectRandomLastUUID();
+    private static final int BASELENGTH = 70;
+
+    public static void refreshInfectedUUIDs() {
+
         HttpURLConnection urlConnection = null;
         try {
             //TODO use a more sophisticated library
-            String appendix = lastInfectedUUID == null? "": "?uuid=" + encodeHexString(lastInfectedUUID);
             URL url = new URL(BASE_URL);
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.addRequestProperty("Accept", "application/octet-stream");
-            InputStream inputStream = new BufferedInputStream(urlConnection.getInputStream());
-            byte[] uuidBytes = new byte[UUID_LENGTH];
-            while (inputStream.read(uuidBytes) == uuidBytes.length) {
-                dbHelper.insertInfected(uuidBytes);
+            InputStream in = urlConnection.getInputStream();
+            byte[] base = new byte[BASELENGTH];
+            byte[] memo;
+            int readBytes;
+            while ((readBytes = in.read(base, 0, BASELENGTH)) == BASELENGTH) {
+                int memolength = (int) base[BASELENGTH - 1] & 0xFF;
+                memo = new byte[memolength];
+                if (in.read(memo, 0, memolength) < memolength) {
+                    throw new RuntimeException("Parsing from Server failed");
+                }
+                System.out.println("Downloaded TCN Report: " + encodeHexString(base) + encodeHexString(memo));
             }
-            dbHelper.updateLatestFetchTime();
+            if (readBytes > 0)
+                throw new RuntimeException("Parsing from Server failed");
         } catch (MalformedURLException e) {
             Log.wtf(LOG_TAG, "Malformed URL?!", e);
             throw new RuntimeException(e);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (urlConnection != null)
+            if (urlConnection != null) {
                 urlConnection.disconnect();
+            }
         }
     }
 
