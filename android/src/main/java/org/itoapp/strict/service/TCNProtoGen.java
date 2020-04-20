@@ -21,7 +21,6 @@ public class TCNProtoGen {
 
     byte[] rak = new byte[32];
     byte[] rvk = new byte[32];
-    Ed25519PublicKey rvki;
 
     List<byte[]> tcks = new LinkedList<>();
 
@@ -33,8 +32,7 @@ public class TCNProtoGen {
 
     void genRVKandTck0() {
         Ed25519PrivateKey sk = Ed25519PrivateKey.fromByteArray(rak);
-        rvki = sk.derivePublic();
-        rvk = rvki.toByteArray();
+        rvk = sk.derivePublic().toByteArray();
         MessageDigest h_tck0 = getSHA256();
         h_tck0.update(H_TCK);
         h_tck0.update(rak); // why do we use this ???
@@ -88,7 +86,7 @@ public class TCNProtoGen {
 
         payload.put(memo);
 
-        byte [] sig = Ed25519PrivateKey.fromByteArray(rak).expand().sign(payload.array(), rvki).toByteArray();
+        byte [] sig = Ed25519PrivateKey.fromByteArray(rak).expand().sign(payload.array(), Ed25519PrivateKey.fromByteArray(rak).derivePublic()).toByteArray());
         ByteBuffer ret = ByteBuffer.allocate(totalPayloadbytes + sig.length);
         ret.put(payload.array());
         ret.put(sig);
