@@ -6,20 +6,25 @@
 //
 
 import Foundation
-@objc
-public class SwItoBluetooth :NSObject {
-    @objc
-    func isPossiblyInfected() -> NSNumber{
-        return true;
+@objc public class SwItoBluetooth :NSObject {
+    
+    @objc func publishBeaconUUIDs(from: NSNumber, to: NSNumber) -> Bool{
+        return false
     }
     
-    @objc
-    func restartTracingService(){
+    @objc func onDistanceMeasurements() -> NSArray{
+        return []
+    }
+    
+    @objc func isPossiblyInfected() -> NSNumber{
+        return true
+    }
+    
+    @objc func restartTracingService(){
         
     }
     
-    @objc
-    func getLatestFetchTime() -> NSNumber{
-        return 0;
+    @objc func getLatestFetchTime() -> NSNumber{
+        return 0
     }
 }
