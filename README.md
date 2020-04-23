@@ -15,7 +15,7 @@ This library is the native backend for the ito app. It does several things
 
 ## Getting started
 
-`$ npm install react-native-ito-bluetooth --save`
+`$ npm install https://github.com/ito-org/react-native-ito --save`
 
 ### Mostly automatic installation
 
