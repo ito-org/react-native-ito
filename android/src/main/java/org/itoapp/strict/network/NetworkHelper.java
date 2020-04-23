@@ -9,6 +9,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.itoapp.strict.Helper.encodeHexString;
 
@@ -19,8 +22,8 @@ public class NetworkHelper {
 
     private static final int BASELENGTH = 70;
 
-    public static void refreshInfectedUUIDs() {
-
+    public static List<byte[]> refreshInfectedUUIDs() {
+        List<byte[]> reports = new LinkedList<>();
         HttpURLConnection urlConnection = null;
         try {
             //TODO use a more sophisticated library
@@ -38,6 +41,11 @@ public class NetworkHelper {
                     throw new RuntimeException("Parsing from Server failed");
                 }
                 System.out.println("Downloaded TCN Report: " + encodeHexString(base) + encodeHexString(memo));
+                // use PushbackInputstream and get rid of BB?
+                ByteBuffer report = ByteBuffer.allocate(BASELENGTH + memolength);
+                report.put(base);
+                report.put(memo);
+                reports.add(report.array());
             }
             if (readBytes > 0)
                 throw new RuntimeException("Parsing from Server failed");
@@ -51,6 +59,7 @@ public class NetworkHelper {
                 urlConnection.disconnect();
             }
         }
+        return reports;
     }
 
 

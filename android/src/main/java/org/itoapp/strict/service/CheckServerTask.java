@@ -18,7 +18,7 @@ public class CheckServerTask extends AsyncTask<Void, Void, Void> {
 
     @Override
     protected Void doInBackground(Void... voids) {
-        NetworkHelper.refreshInfectedUUIDs();
+        List<byte[]> reports = NetworkHelper.refreshInfectedUUIDs();
         List<ItoDBHelper.ContactResult> contactResults = dbHelper.selectInfectedContacts();
         if (!contactResults.isEmpty()) {
             Log.w(LOG_TAG, "Possibly encountered UUIDs: " + contactResults.size());
