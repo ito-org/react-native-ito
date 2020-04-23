@@ -1,5 +1,5 @@
 {
-  "name": "react-native-ito-bluetooth",
+  "name": "react-native-ito",
   "title": "React Native Ito Bluetooth",
   "version": "1.0.0",
   "description": "TODO",
@@ -9,8 +9,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ito-org/react-native-ito-bluetooth.git",
-    "baseUrl": "https://github.com/ito-org/react-native-ito-bluetooth"
+    "url": "git+https://github.com/ito-org/react-native-ito.git",
+    "baseUrl": "https://github.com/ito-org/react-native-ito"
   },
   "keywords": [
     "react-native"
