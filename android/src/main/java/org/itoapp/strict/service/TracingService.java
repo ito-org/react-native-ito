@@ -5,7 +5,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
@@ -30,18 +29,17 @@ import org.itoapp.strict.Constants;
 import org.itoapp.strict.Helper;
 import org.itoapp.strict.Preconditions;
 import org.itoapp.strict.database.ItoDBHelper;
+import org.tcncoalition.tcnclient.bluetooth.TcnBluetoothService;
+import org.tcncoalition.tcnclient.bluetooth.TcnBluetoothServiceCallback;
 
 import java.security.SecureRandom;
 
-public class TracingService extends Service {
+public class TracingService extends TcnBluetoothService {
     private static final String LOG_TAG = "TracingService";
     private static final String DEFAULT_NOTIFICATION_CHANNEL = "ContactTracing";
     private static final int NOTIFICATION_ID = 1;
-    private SecureRandom uuidGenerator;
     private Looper serviceLooper;
     private Handler serviceHandler;
-    private BleScanner bleScanner;
-    private BleAdvertiser bleAdvertiser;
     private ContactCache contactCache;
     private ItoDBHelper dbHelper;
 
@@ -49,11 +47,20 @@ public class TracingService extends Service {
 
         @Override
         public void onReceive(Context context, android.content.Intent intent) {
-            if(!isBluetoothRunning()) {
-                startBluetooth();
-            }
-            else if(!Preconditions.canScanBluetooth(context)) {
-                stopBluetooth();
+            if (!isBluetoothRunning()) {
+                startTcnExchange(new TcnBluetoothServiceCallback() {
+                    @Override
+                    public byte[] generateTcn() {
+                        return new byte[0]; //TODO
+                    }
+
+                    @Override
+                    public void onTcnFound(byte[] tcn, Double estimatedDistance) {
+                        contactCache.addReceivedBroadcast(tcn, (float) estimatedDistance.doubleValue());
+                    }
+                });
+            } else if (!Preconditions.canScanBluetooth(context)) {
+                stopTcnExchange();
             }
         }
     };
@@ -74,7 +81,7 @@ public class TracingService extends Service {
         public boolean isPossiblyInfected() {
             //TODO do async
             long totalExposureDuration = 0;
-            for(ItoDBHelper.ContactResult contact:dbHelper.selectInfectedContacts()) {
+            for (ItoDBHelper.ContactResult contact : dbHelper.selectInfectedContacts()) {
                 totalExposureDuration += contact.duration;
             }
             return totalExposureDuration > Constants.MIN_EXPOSURE_DURATION;
@@ -91,24 +98,6 @@ public class TracingService extends Service {
             return dbHelper.getLatestFetchTime();
         }
     };
-
-    private Runnable regenerateUUID = () -> {
-        Log.i(LOG_TAG, "Regenerating UUID");
-
-        byte[] uuid = new byte[Constants.UUID_LENGTH];
-        uuidGenerator.nextBytes(uuid);
-        byte[] hashedUUID = Helper.calculateTruncatedSHA256(uuid);
-
-        dbHelper.insertBeacon(uuid);
-
-        byte[] broadcastData = new byte[Constants.BROADCAST_LENGTH];
-        broadcastData[Constants.BROADCAST_LENGTH - 1] = getTransmitPower();
-        System.arraycopy(hashedUUID, 0, broadcastData, 0, Constants.HASH_LENGTH);
-
-        bleAdvertiser.setBroadcastData(broadcastData);
-
-        serviceHandler.postDelayed(this.regenerateUUID, Constants.UUID_VALID_INTERVAL);
-    };
     //TODO move this to some alarmManager governed section.
 // Also ideally check the server when connected to WIFI and charger
     private Runnable checkServer = () -> {
@@ -122,27 +111,11 @@ public class TracingService extends Service {
     }
 
     private boolean isBluetoothRunning() {
-        return bleScanner != null;
+        return false; //TODO
     }
 
     private void stopBluetooth() {
-        Log.i(LOG_TAG, "Stopping Bluetooth");
-        contactCache.flush();
-        if (bleScanner != null)
-            try {
-                bleScanner.stopScanning();
-            }
-            catch(Exception ignored) {}
-        if (bleAdvertiser != null)
-            try {
-                bleAdvertiser.stopAdvertising();
-            }
-            catch(Exception ignored) {}
-
-        serviceHandler.removeCallbacks(regenerateUUID);
-
-        bleScanner = null;
-        bleAdvertiser = null;
+        //TODO
     }
 
     private void startBluetooth() {
@@ -155,18 +128,11 @@ public class TracingService extends Service {
         assert bluetoothManager != null;
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
 
-        bleScanner = new BleScanner(bluetoothAdapter, contactCache);
-        bleAdvertiser = new BleAdvertiser(bluetoothAdapter, serviceHandler);
-
-        regenerateUUID.run();
-        bleAdvertiser.startAdvertising();
-        bleScanner.startScanning();
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        uuidGenerator = new SecureRandom();
         dbHelper = new ItoDBHelper(this);
         HandlerThread thread = new HandlerThread("TracingServiceHandler", Thread.NORM_PRIORITY);
         thread.start();
@@ -218,8 +184,6 @@ public class TracingService extends Service {
 
     @Override
     public void onDestroy() {
-        bleAdvertiser.stopAdvertising();
-        bleScanner.stopScanning();
         contactCache.flush();
         unregisterReceiver(broadcastReceiver);
         super.onDestroy();
@@ -227,6 +191,7 @@ public class TracingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
         runAsForgroundService();
         return START_STICKY;
     }

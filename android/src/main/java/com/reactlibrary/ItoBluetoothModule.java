@@ -63,7 +63,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     }
 
     //make this method synchronous because it has to return a boolean
-    @ReactMethod(isBlockingSynchronousMethod = true)
+    @ReactMethod()
     public boolean isPossiblyInfected() {
         try {
             return tracingServiceInterface.isPossiblyInfected();
@@ -74,7 +74,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     }
 
     //make this method synchronous because it has to return a boolean
-    @ReactMethod(isBlockingSynchronousMethod = true)
+    @ReactMethod()
     public int getLatestFetchTime() {
         try {
             return tracingServiceInterface.getLatestFetchTime();

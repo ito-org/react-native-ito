@@ -1,0 +1,5 @@
+include ':tcn-client-android'
+
+project(":tcn-client-android").projectDir = file("tcn-client-android/tcn-client-android")
+
+

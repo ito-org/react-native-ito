@@ -1,0 +1,3 @@
+[submodule "android/tcn-client-android"]
+	path = android/tcn-client-android
+	url = https://github.com/TCNCoalition/tcn-client-android
