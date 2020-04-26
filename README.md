@@ -1,5 +1,6 @@
 # ito library for React Native apps
 
+[![Documentation](https://img.shields.io/website?label=documentation&url=https%3A%2F%2Fdocs.ito-app.org%2Freact-native-ito)](https://docs.ito-app.org/react-native-ito/)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause--Clear-brightgreen)](LICENSE)
 
 ## What it does
