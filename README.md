@@ -20,7 +20,7 @@ This library is the native backend for the ito app. It does several things
 
 ### Mostly automatic installation
 
-`$ react-native link react-native-ito-bluetooth`
+`$ react-native link react-native-ito`
 
 ## Usage
 Retrieve the native module.
