@@ -20,6 +20,7 @@ public class NetworkHelper {
     private static final String LOG_TAG = "InfectedUUIDRepository";
     private static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
 
+    private static final int SIGNATURELENGTH = 64;
     private static final int BASELENGTH = 70;
 
     public static List<byte[]> refreshInfectedUUIDs() {
@@ -38,6 +39,10 @@ public class NetworkHelper {
                 int memolength = (int) base[BASELENGTH - 1] & 0xFF;
                 memo = new byte[memolength];
                 if (in.read(memo, 0, memolength) < memolength) {
+                    throw new RuntimeException("Parsing from Server failed");
+                }
+                byte[] signature = new byte[SIGNATURELENGTH];
+                if (in.read(signature, 0, SIGNATURELENGTH) < SIGNATURELENGTH) {
                     throw new RuntimeException("Parsing from Server failed");
                 }
                 System.out.println("Downloaded TCN Report: " + encodeHexString(base) + encodeHexString(memo));
