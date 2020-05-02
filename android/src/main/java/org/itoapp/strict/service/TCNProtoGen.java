@@ -17,6 +17,10 @@ public class TCNProtoGen {
     private static final String SHA256 = "SHA-256";
     private static final byte[] H_TCK = "H_TCK".getBytes(); // Pin charset?
     private static final byte[] H_TCN = "H_TCN".getBytes(); // Pin charset?
+    public static final byte TCN_ID_ITO = 0x2;
+    public static final byte TCN_ID_COEPI = 0x0;
+
+    byte memotype = TCN_ID_ITO;
 
     byte[] rak = new byte[32];
     byte[] rvk = new byte[32];
@@ -25,8 +29,12 @@ public class TCNProtoGen {
 
     public TCNProtoGen() {
         RANDOM.nextBytes(rak);
-
         genRVKandTck0();
+    }
+    public TCNProtoGen(byte memotype) {
+        RANDOM.nextBytes(rak);
+        genRVKandTck0();
+        this.memotype = memotype;
     }
 
     void genRVKandTck0() {
@@ -61,12 +69,14 @@ public class TCNProtoGen {
         return ret;
     }
 
-    public synchronized byte[] generateReport(int daysBefore) {
+    public synchronized byte[] generateReport(int previousRatchetTicks) {
         int end = tcks.size() - 1;
-        int start = tcks.size() - daysBefore - 1;
+        int start = tcks.size() - previousRatchetTicks - 1;
         if (tcks.size() <= 1) { // have we got more than only tck_0?
             throw new RuntimeException("no Keys to report about");
         }
+        if (previousRatchetTicks < 0)
+            throw new RuntimeException("daysBefore can not be negative");
         if (start < 1) { // give em everything we've got (except tck_0)
             start = 1;
         }
@@ -85,18 +95,22 @@ public class TCNProtoGen {
 
         payload.put(memo);
 
-        byte [] sig = Ed25519PrivateKey.fromByteArray(rak).expand().sign(payload.array(), Ed25519PrivateKey.fromByteArray(rak).derivePublic()).toByteArray();
+        byte[] sig = Ed25519PrivateKey.fromByteArray(rak).expand().sign(payload.array(), Ed25519PrivateKey.fromByteArray(rak).derivePublic()).toByteArray();
         ByteBuffer ret = ByteBuffer.allocate(totalPayloadbytes + sig.length);
         ret.put(payload.array());
         ret.put(sig);
         return ret.array();
     }
 
+    public int getRatchetTickCount() {
+        return tcks.size()-1;
+    }
+
     private byte[] createMemo() {
         byte[] symptomData = "symptom data".getBytes();
         ByteBuffer memo = ByteBuffer.allocate(2 + symptomData.length);
         memo.order(ByteOrder.LITTLE_ENDIAN);
-        memo.put((byte) 2); // 0x2: ITO symptom report v1;
+        memo.put((byte) this.memotype); // 0x2: ITO symptom report v1;
         memo.put((byte) symptomData.length);
         memo.put(symptomData);
         return memo.array();
