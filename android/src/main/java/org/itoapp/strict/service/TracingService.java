@@ -21,17 +21,16 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.core.app.NotificationCompat;
-
 import org.itoapp.DistanceCallback;
 import org.itoapp.PublishUUIDsCallback;
 import org.itoapp.TracingServiceInterface;
 import org.itoapp.strict.Constants;
-import org.itoapp.strict.Helper;
 import org.itoapp.strict.Preconditions;
 import org.itoapp.strict.database.ItoDBHelper;
 
 import java.security.SecureRandom;
+
+import androidx.core.app.NotificationCompat;
 
 public class TracingService extends Service {
     private static final String LOG_TAG = "TracingService";
@@ -68,7 +67,7 @@ public class TracingService extends Service {
 
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
-            new PublishBeaconsTask(tcnProto.generateReport(new Long(from).intValue()), callback).execute();
+            new PublishBeaconsTask(tcnProto.generateReport(tcnProto.getRatchetTickCount()), callback).execute();
         }
 
         @Override
@@ -234,6 +233,6 @@ public class TracingService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        return binder;
+        return (IBinder) binder;
     }
 }
