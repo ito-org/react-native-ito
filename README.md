@@ -1,5 +1,6 @@
 # ito library for React Native apps
 
+[![Documentation](https://img.shields.io/website?label=documentation&url=https%3A%2F%2Fdocs.ito-app.org%2Freact-native-ito)](https://docs.ito-app.org/react-native-ito/)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause--Clear-brightgreen)](LICENSE)
 
 ## What it does
@@ -15,11 +16,11 @@ This library is the native backend for the ito app. It does several things
 
 ## Getting started
 
-`$ npm install react-native-ito-bluetooth --save`
+`$ npm install https://github.com/ito-org/react-native-ito --save`
 
 ### Mostly automatic installation
 
-`$ react-native link react-native-ito-bluetooth`
+`$ react-native link react-native-ito`
 
 ## Usage
 Retrieve the native module.

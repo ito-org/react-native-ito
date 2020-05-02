@@ -9,7 +9,7 @@
 import Foundation
 
 @objc(ItoBluetooth)
-public class SwItoBluetooth: NSObject {
+public class ItoBluetooth: NSObject {
     @objc
     public func isPossiblyInfected() -> Bool{
         return true;
