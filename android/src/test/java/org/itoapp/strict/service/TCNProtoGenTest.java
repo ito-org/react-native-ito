@@ -3,6 +3,7 @@ package org.itoapp.strict.service;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -97,7 +98,8 @@ public class TCNProtoGenTest {
 
 
     public static byte[] hex2Byte(String in) {
-        return new BigInteger(in, 16).toByteArray();
+        byte[] ba = new BigInteger(in, 16).toByteArray();
+        return Arrays.copyOfRange(ba,1,ba.length);
     }
 
     public static String byte2Hex(byte[] in) {
