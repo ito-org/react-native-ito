@@ -28,7 +28,7 @@ public class TCNProtoUtil {
     public static void generateAllTCNsFromReport(byte[] report, INextTCNCallback callback) {
         int from = readUShort(report, 64);
         byte[] bstartTCK = Arrays.copyOfRange(report, 32, 64);
-        TCNProtoGen ratchet = new TCNProtoGen(report[69], getRvkfromReport(report), bstartTCK, from - 1);
+        TCNProtoGen ratchet = new TCNProtoGen(report[68], getRvkfromReport(report), bstartTCK, from - 1);
         int to = readUShort(report, 66);
         //System.out.println("reading from " + from + " to " + to);
         callback.next(ratchet.getCurrentTCN());
