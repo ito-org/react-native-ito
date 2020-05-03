@@ -19,7 +19,7 @@ public class TCNProtoUtil {
             Ed25519Signature signature = Ed25519Signature.fromByteArray(bsignature);
             return rvk.verify(breport, signature);
 
-        } catch (InvalidEncodingException e) {
+        } catch (Exception e) {
             return false;
         }
     }
