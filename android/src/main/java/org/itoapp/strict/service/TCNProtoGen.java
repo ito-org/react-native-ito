@@ -6,8 +6,6 @@ import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.LinkedList;
-import java.util.List;
 
 import cafe.cryptography.ed25519.Ed25519PrivateKey;
 
@@ -25,15 +23,26 @@ public class TCNProtoGen {
     byte[] rak = new byte[32];
     byte[] rvk = new byte[32];
 
-    List<byte[]> tcks = new LinkedList<>();
+    byte[] startTCK;
+    byte[] currentTCK;
+    int currentTCKpos = 0;
 
     public TCNProtoGen() {
         RANDOM.nextBytes(rak);
         genRVKandTck0();
     }
+
     public TCNProtoGen(byte memotype) {
         RANDOM.nextBytes(rak);
         genRVKandTck0();
+        this.memotype = memotype;
+    }
+
+    public TCNProtoGen(byte memotype, byte[] rvk, byte[] startTCK, int startTCKpos) {
+        this.rvk = rvk;
+        this.startTCK = startTCK;
+        currentTCK = startTCK;
+        currentTCKpos = startTCKpos;
         this.memotype = memotype;
     }
 
@@ -43,36 +52,44 @@ public class TCNProtoGen {
         MessageDigest h_tck0 = getSHA256();
         h_tck0.update(H_TCK);
         h_tck0.update(rak); // why do we use this ???
-        tcks.add(h_tck0.digest());
-    }
-
-    private void operateRatchet() {
-        MessageDigest h_tckj = getSHA256();
-        h_tckj.update(H_TCK);
-        h_tckj.update(rvk);
-        h_tckj.update(getLastTck());
-        tcks.add(h_tckj.digest());
+        startTCK = h_tck0.digest();
+        currentTCK = startTCK;
+        currentTCKpos = 0;
     }
 
     public synchronized byte[] getNewTCN() {
-        operateRatchet();
+        currentTCK = genNextTCK(currentTCK);
+        currentTCKpos++;
+        return getCurrentTCN();
+    }
+
+    byte[] getCurrentTCN() {
         MessageDigest h_tcnj = getSHA256();
         h_tcnj.update(H_TCN);
         ByteBuffer length = ByteBuffer.allocate(2);
         length.order(ByteOrder.LITTLE_ENDIAN);
-        length.putShort((short) (tcks.size() - 1));
+        length.putShort((short) (currentTCKpos));
         h_tcnj.update(length.array());
-        h_tcnj.update(getLastTck());
+        h_tcnj.update(currentTCK);
 
         byte[] ret = new byte[16];
         System.arraycopy(h_tcnj.digest(), 0, ret, 0, 16);
         return ret;
     }
 
+    private byte[] genNextTCK(byte[] current) {
+        MessageDigest h_tckj = getSHA256();
+        h_tckj.update(H_TCK);
+        h_tckj.update(rvk);
+        h_tckj.update(current);
+        return h_tckj.digest();
+    }
+
     public synchronized byte[] generateReport(int previousRatchetTicks) {
-        int end = tcks.size() - 1;
-        int start = tcks.size() - previousRatchetTicks - 1;
-        if (tcks.size() <= 1) { // have we got more than only tck_0?
+        // todo fail if no rak present
+        int end = currentTCKpos;
+        int start = currentTCKpos - previousRatchetTicks - 1;
+        if (currentTCKpos <= 0) { // have we got more than only tck_0?
             throw new RuntimeException("no Keys to report about");
         }
         if (previousRatchetTicks < 0)
@@ -85,7 +102,7 @@ public class TCNProtoGen {
 
         ByteBuffer payload = ByteBuffer.allocate(totalPayloadbytes);
         payload.put(rvk);
-        payload.put(tcks.get(start));
+        payload.put(generateTCKAtPosition(start));
 
         ByteBuffer beginAndEnd = ByteBuffer.allocate(4);
         beginAndEnd.order(ByteOrder.LITTLE_ENDIAN);
@@ -102,8 +119,16 @@ public class TCNProtoGen {
         return ret.array();
     }
 
+    private byte[] generateTCKAtPosition(int start) {
+        byte[] tmp = startTCK;
+        for (int i = 0; i < start; i++) {
+            tmp = genNextTCK(tmp);
+        }
+        return tmp;
+    }
+
     public int getRatchetTickCount() {
-        return tcks.size()-1;
+        return currentTCKpos;
     }
 
     private byte[] createMemo() {
@@ -116,9 +141,6 @@ public class TCNProtoGen {
         return memo.array();
     }
 
-    private byte[] getLastTck() {
-        return tcks.get(tcks.size() - 1);
-    }
 
     private MessageDigest getSHA256() {
         try {

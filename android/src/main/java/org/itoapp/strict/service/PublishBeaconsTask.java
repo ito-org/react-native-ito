@@ -5,7 +5,6 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import org.itoapp.PublishUUIDsCallback;
-import org.itoapp.strict.database.ItoDBHelper;
 import org.itoapp.strict.network.NetworkHelper;
 
 import java.io.IOException;
