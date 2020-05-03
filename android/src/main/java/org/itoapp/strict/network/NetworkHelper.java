@@ -13,8 +13,6 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.itoapp.strict.Helper.encodeHexString;
-
 public class NetworkHelper {
 
     private static final String LOG_TAG = "InfectedUUIDRepository";
@@ -45,11 +43,11 @@ public class NetworkHelper {
                 if (in.read(signature, 0, SIGNATURELENGTH) < SIGNATURELENGTH) {
                     throw new RuntimeException("Parsing from Server failed");
                 }
-                System.out.println("Downloaded TCN Report: " + encodeHexString(base) + encodeHexString(memo));
                 // use PushbackInputstream and get rid of BB?
-                ByteBuffer report = ByteBuffer.allocate(BASELENGTH + memolength);
+                ByteBuffer report = ByteBuffer.allocate(BASELENGTH + memolength + SIGNATURELENGTH);
                 report.put(base);
                 report.put(memo);
+                report.put(signature);
                 reports.add(report.array());
             }
             if (readBytes > 0)
