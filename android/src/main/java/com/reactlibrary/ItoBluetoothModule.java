@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import androidx.room.Room;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -19,6 +20,7 @@ import org.itoapp.DistanceCallback;
 import org.itoapp.PublishUUIDsCallback;
 import org.itoapp.TracingServiceInterface;
 import org.itoapp.strict.service.TracingService;
+import org.itoapp.strict.database.RoomDB;
 
 public class ItoBluetoothModule extends ReactContextBaseJavaModule {
 
@@ -56,6 +58,9 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
     public ItoBluetoothModule(ReactApplicationContext reactContext) {
         super(reactContext);
         Log.d(LOG_TAG, "Creating ItoBluetoothModule");
+        if (RoomDB.db == null)
+            RoomDB.db = Room.databaseBuilder(reactContext,
+                RoomDB.class, "ito.room.db").build();
         this.reactContext = reactContext;
         Intent intent = new Intent(reactContext, TracingService.class);
         reactContext.startService(intent);
