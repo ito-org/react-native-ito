@@ -4,16 +4,17 @@ import android.os.Handler;
 import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.collection.CircularArray;
-
 import org.itoapp.DistanceCallback;
 import org.itoapp.strict.Constants;
+import org.itoapp.strict.Helper;
 import org.itoapp.strict.database.ItoDBHelper;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import androidx.collection.CircularArray;
 
 public class ContactCache {
     private static final String LOG_TAG = "ContactCache";
@@ -35,6 +36,7 @@ public class ContactCache {
         int contactDuration = (int) (entry.lastReceived - entry.firstReceived);
         if (contactDuration > Constants.MIN_CONTACT_DURATION)
             dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
+        Log.d(LOG_TAG, "Flushing "+ Helper.encodeHexString(hash.array()) +" to DB");
         cache.remove(hash);
 
         reportDistances();
@@ -69,8 +71,10 @@ public class ContactCache {
         if (distances.size() == Constants.DISTANCE_SMOOTHING_MA_LENGTH) {
             entry.lowestDistance = Math.min(calculateDistance(entry), entry.lowestDistance);
             distances.popLast();
-            int contactDuration = (int) (entry.lastReceived - entry.firstReceived);
-            dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
+            distances.clear();
+            distances.addFirst(entry.lowestDistance);
+            //int contactDuration = (int) (entry.lastReceived - entry.firstReceived);
+            //dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
         }
         reportDistances();
     }
