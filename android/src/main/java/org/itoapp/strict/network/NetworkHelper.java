@@ -24,7 +24,7 @@ import static org.itoapp.strict.Helper.encodeHexString;
 public class NetworkHelper {
 
     private static final String LOG_TAG = "InfectedUUIDRepository";
-    private static final String BASE_URL = "http://loon:8080/tcnreport";
+    private static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
 
     private static final int SIGNATURELENGTH = 64;
     private static final int BASELENGTH = 70;
