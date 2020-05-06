@@ -27,9 +27,11 @@ import org.itoapp.TracingServiceInterface;
 import org.itoapp.strict.Constants;
 import org.itoapp.strict.Preconditions;
 import org.itoapp.strict.database.ItoDBHelper;
+import org.itoapp.strict.database.RoomDB;
 
 import java.security.SecureRandom;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
 public class TracingService extends Service {
@@ -49,10 +51,9 @@ public class TracingService extends Service {
 
         @Override
         public void onReceive(Context context, android.content.Intent intent) {
-            if(!isBluetoothRunning()) {
+            if (!isBluetoothRunning()) {
                 startBluetooth();
-            }
-            else if(!Preconditions.canScanBluetooth(context)) {
+            } else if (!Preconditions.canScanBluetooth(context)) {
                 stopBluetooth();
             }
         }
@@ -70,13 +71,11 @@ public class TracingService extends Service {
             new PublishBeaconsTask(tcnProto.generateReport(tcnProto.getRatchetTickCount()), callback).execute();
         }
 
+        @RequiresApi(api = 24)
         @Override
         public boolean isPossiblyInfected() {
             //TODO do async
-            long totalExposureDuration = 0;
-            for(ItoDBHelper.ContactResult contact:dbHelper.selectInfectedContacts()) {
-                totalExposureDuration += contact.duration;
-            }
+            Long totalExposureDuration = RoomDB.db.seenTCNDao().findSickTCNs().stream().map(x -> x.duration).reduce(0L, (a, b) -> a + b);
             return totalExposureDuration > Constants.MIN_EXPOSURE_DURATION;
         }
 
@@ -128,13 +127,13 @@ public class TracingService extends Service {
         if (bleScanner != null)
             try {
                 bleScanner.stopScanning();
+            } catch (Exception ignored) {
             }
-            catch(Exception ignored) {}
         if (bleAdvertiser != null)
             try {
                 bleAdvertiser.stopAdvertising();
+            } catch (Exception ignored) {
             }
-            catch(Exception ignored) {}
 
         serviceHandler.removeCallbacks(regenerateUUID);
 
@@ -164,7 +163,7 @@ public class TracingService extends Service {
     public void onCreate() {
         super.onCreate();
         uuidGenerator = new SecureRandom();
-        dbHelper = new ItoDBHelper(this);
+        dbHelper = new ItoDBHelper();
         HandlerThread thread = new HandlerThread("TracingServiceHandler", Thread.NORM_PRIORITY);
         thread.start();
 

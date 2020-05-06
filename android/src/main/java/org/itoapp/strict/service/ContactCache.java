@@ -33,10 +33,11 @@ public class ContactCache {
         Log.d(LOG_TAG, "Flushing distance to DB");
         CacheEntry entry = cache.get(hash);
         entry.lowestDistance = Math.min(calculateDistance(entry), entry.lowestDistance);
-        int contactDuration = (int) (entry.lastReceived - entry.firstReceived);
-        if (contactDuration > Constants.MIN_CONTACT_DURATION)
+        long contactDuration = entry.lastReceived - entry.firstReceived;
+        if (contactDuration > Constants.MIN_CONTACT_DURATION) {
             dbHelper.insertContact(entry.hash, (int) entry.lowestDistance, contactDuration);
-        Log.d(LOG_TAG, "Flushing "+ Helper.encodeHexString(hash.array()) +" to DB");
+            Log.d(LOG_TAG, "Flushing " + Helper.encodeHexString(hash.array()) + " to DB");
+        }
         cache.remove(hash);
 
         reportDistances();

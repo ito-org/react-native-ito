@@ -1,8 +1,11 @@
 package org.itoapp.strict.service;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import org.itoapp.strict.database.ItoDBHelper;
+import org.itoapp.strict.database.RoomDB;
+import org.itoapp.strict.database.entities.SeenTCN;
 import org.itoapp.strict.network.NetworkHelper;
 
 import java.util.List;
@@ -23,11 +26,7 @@ public class CheckServerTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... voids) {
         List<byte[]> reports = NetworkHelper.refreshInfectedUUIDs();
-        try {
-            reports.stream().filter(x -> TCNProtoUtil.verifySignatureOfReportCorrect(x)).forEach(x -> TCNProtoUtil.generateAllTCNsFromReport(x, tcn -> this.checkInfection(tcn)));
-        } catch (RuntimeException ex ) {
-            ex.printStackTrace();
-        }
+        reports.stream().filter(x -> TCNProtoUtil.verifySignatureOfReportCorrect(x)).forEach(x -> TCNProtoUtil.generateAllTCNsFromReport(x, tcn -> this.checkInfection(tcn)));
         /* List<ItoDBHelper.ContactResult> contactResults = dbHelper.selectInfectedContacts();
         if (!contactResults.isEmpty()) {
             Log.w(LOG_TAG, "Possibly encountered UUIDs: " + contactResults.size());
@@ -36,7 +35,12 @@ public class CheckServerTask extends AsyncTask<Void, Void, Void> {
     }
 
     private void checkInfection(byte[] tcn) {
-        System.out.println("Test if following TCN was seen: " + encodeHexString(tcn));
-        // todo
+        Log.d(LOG_TAG, "Test if following TCN was seen: "  + encodeHexString(tcn));
+        final SeenTCN seenTCN = RoomDB.db.seenTCNDao().findSeenTCNByHash(encodeHexString(tcn));
+        if (seenTCN != null && !seenTCN.reportedSick) {
+            seenTCN.reportedSick = true;
+            RoomDB.db.seenTCNDao().update(seenTCN);
+            Log.d(LOG_TAG, "Updated "  + seenTCN);
+        }
     }
 }
