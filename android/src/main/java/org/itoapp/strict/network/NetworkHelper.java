@@ -19,12 +19,12 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.itoapp.strict.Helper.encodeHexString;
+import static org.itoapp.strict.Helper.byte2Hex;
 
 public class NetworkHelper {
 
     private static final String LOG_TAG = "InfectedUUIDRepository";
-    private static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
+    public static final String BASE_URL = "http://loon:8080/tcnreport";
 
     private static final int SIGNATURELENGTH = 64;
     private static final int BASELENGTH = 70;
@@ -84,7 +84,7 @@ public class NetworkHelper {
 
             lastReportHashForServer.lastcheck = new Date();
 
-            lastReportHashForServer.lastReportHash = encodeHexString(Arrays.copyOfRange(lastreport,0,lastreport.length -SIGNATURELENGTH));
+            lastReportHashForServer.lastReportHash = byte2Hex(Arrays.copyOfRange(lastreport,0,lastreport.length -SIGNATURELENGTH));
             RoomDB.db.lastReportDao().saveOrUpdate(lastReportHashForServer);
         }
         return reports;

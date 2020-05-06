@@ -32,6 +32,12 @@ public class TCNProtoGen {
         genRVKandTck0();
     }
 
+    public TCNProtoGen(byte[] rak, int currentTCKpos) {
+        this.rak = rak;
+        genRVKandTck0();
+        this.currentTCKpos = currentTCKpos;
+    }
+
     public TCNProtoGen(byte memotype) {
         RANDOM.nextBytes(rak);
         genRVKandTck0();

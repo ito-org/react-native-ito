@@ -11,7 +11,7 @@ import androidx.room.PrimaryKey;
         unique = true)})
 public class SeenTCN {
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    public long id;
 
     @ColumnInfo(name = "tcn")
     public String tcn;

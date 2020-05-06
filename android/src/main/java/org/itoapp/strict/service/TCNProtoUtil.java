@@ -1,12 +1,21 @@
 package org.itoapp.strict.service;
 
+import org.itoapp.strict.database.RoomDB;
+import org.itoapp.strict.database.entities.LocalKey;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import cafe.cryptography.curve25519.InvalidEncodingException;
+import androidx.annotation.RequiresApi;
 import cafe.cryptography.ed25519.Ed25519PublicKey;
 import cafe.cryptography.ed25519.Ed25519Signature;
+
+import static org.itoapp.strict.Helper.byte2Hex;
+import static org.itoapp.strict.Helper.hex2Byte;
 
 public class TCNProtoUtil {
 
@@ -39,6 +48,20 @@ public class TCNProtoUtil {
     }
 
 
+    public static void persistRatchet(TCNProtoGen ratchet) {
+        LocalKey lk = new LocalKey();
+        lk.lastGenerated = new Date();
+        lk.rak = byte2Hex(ratchet.rak);
+        lk.currentTCKpos = ratchet.currentTCKpos;
+        RoomDB.db.localKeyDao().saveOrUpdate(lk);
+    }
+
+    @RequiresApi(api = 24)
+    public static List<TCNProtoGen> loadAllRatchets() {
+        return RoomDB.db.localKeyDao().getAll().stream().map(x -> new TCNProtoGen(hex2Byte(x.rak), x.currentTCKpos)).collect(Collectors.toList());
+    }
+
+
     private static byte[] getRvkfromReport(byte[] report) {
 
         return Arrays.copyOfRange(report, 0, 32);
@@ -49,8 +72,10 @@ public class TCNProtoUtil {
         bb.order(ByteOrder.LITTLE_ENDIAN);
         int i = bb.getShort(index);
         if (i < 0) {
-            i =  i - Short.MIN_VALUE *2;
+            i = i - Short.MIN_VALUE * 2;
         }
         return i;
     }
+
+
 }

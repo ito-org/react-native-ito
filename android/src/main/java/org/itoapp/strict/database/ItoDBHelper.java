@@ -9,7 +9,7 @@ import org.itoapp.strict.network.NetworkHelper;
 import java.util.Date;
 
 import static org.itoapp.strict.Constants.HASH_LENGTH;
-import static org.itoapp.strict.Helper.encodeHexString;
+import static org.itoapp.strict.Helper.byte2Hex;
 
 public class ItoDBHelper {
 
@@ -25,7 +25,7 @@ public class ItoDBHelper {
 
     public synchronized void insertContact(byte[] hashed_uuid, int proximity, long duration) {
         checkHashedUUID(hashed_uuid);
-        String tcn64 = encodeHexString(hashed_uuid);
+        String tcn64 = byte2Hex(hashed_uuid);
         SeenTCN seenTCN = RoomDB.db.seenTCNDao().findSeenTCNByHash(tcn64);
         if (seenTCN == null) {
             seenTCN = new SeenTCN(tcn64, new Date(), proximity, duration);

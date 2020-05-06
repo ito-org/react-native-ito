@@ -2,12 +2,12 @@ package org.itoapp.strict.service;
 
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static org.itoapp.strict.Helper.byte2Hex;
+import static org.itoapp.strict.Helper.hex2Byte;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -97,18 +97,6 @@ public class TCNProtoGenTest {
     }
 
 
-    public static byte[] hex2Byte(String in) {
-        byte[] ba = new BigInteger(in, 16).toByteArray();
-        return Arrays.copyOfRange(ba,1,ba.length);
-    }
 
-    public static String byte2Hex(byte[] in) {
-        String s = "";
-        for (byte b : in) {
-            String st = String.format("%02X", b).toLowerCase();
-            s += st;
-        }
-        return s;
-    }
 
 }

@@ -12,7 +12,7 @@ import androidx.room.PrimaryKey;
         unique = true)})
 public class LastReport {
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    public long id;
 
     @ColumnInfo(name="server_url")
     public String serverUrl;

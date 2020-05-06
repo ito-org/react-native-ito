@@ -12,7 +12,7 @@ import java.util.List;
 
 import androidx.annotation.RequiresApi;
 
-import static org.itoapp.strict.Helper.encodeHexString;
+import static org.itoapp.strict.Helper.byte2Hex;
 
 public class CheckServerTask extends AsyncTask<Void, Void, Void> {
     private static final String LOG_TAG = "CheckServerTask";
@@ -35,8 +35,8 @@ public class CheckServerTask extends AsyncTask<Void, Void, Void> {
     }
 
     private void checkInfection(byte[] tcn) {
-        Log.d(LOG_TAG, "Test if following TCN was seen: "  + encodeHexString(tcn));
-        final SeenTCN seenTCN = RoomDB.db.seenTCNDao().findSeenTCNByHash(encodeHexString(tcn));
+        Log.d(LOG_TAG, "Test if following TCN was seen: "  + byte2Hex(tcn));
+        final SeenTCN seenTCN = RoomDB.db.seenTCNDao().findSeenTCNByHash(byte2Hex(tcn));
         if (seenTCN != null && !seenTCN.reportedSick) {
             seenTCN.reportedSick = true;
             RoomDB.db.seenTCNDao().update(seenTCN);

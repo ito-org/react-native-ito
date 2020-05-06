@@ -34,11 +34,13 @@ import java.security.SecureRandom;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
+import static org.itoapp.strict.Constants.RATCHET_EXCHANGE_INTERVAL;
+
 public class TracingService extends Service {
     private static final String LOG_TAG = "TracingService";
     private static final String DEFAULT_NOTIFICATION_CHANNEL = "ContactTracing";
     private static final int NOTIFICATION_ID = 1;
-    private TCNProtoGen tcnProto = new TCNProtoGen();
+    private TCNProtoGen tcnProto;
     private SecureRandom uuidGenerator;
     private Looper serviceLooper;
     private Handler serviceHandler;
@@ -66,9 +68,12 @@ public class TracingService extends Service {
         }
 
 
+        @RequiresApi(api = 24)
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
-            new PublishBeaconsTask(tcnProto.generateReport(tcnProto.getRatchetTickCount()), callback).execute();
+            // todo use from & to ?
+            TCNProtoUtil.loadAllRatchets().forEach(ratchet ->
+            new PublishBeaconsTask(ratchet.generateReport(ratchet.getRatchetTickCount()), callback).execute());
         }
 
         @RequiresApi(api = 24)
@@ -92,7 +97,7 @@ public class TracingService extends Service {
     };
 
     private Runnable regenerateUUID = () -> {
-        Log.i(LOG_TAG, "Regenerating UUID");
+        Log.i(LOG_TAG, "Regenerating TCN");
 
       /*  byte[] uuid = new byte[Constants.UUID_LENGTH];
         uuidGenerator.nextBytes(uuid);
@@ -105,9 +110,17 @@ public class TracingService extends Service {
         System.arraycopy(hashedUUID, 0, broadcastData, 0, Constants.HASH_LENGTH);
 */
 
-        bleAdvertiser.setBroadcastData(tcnProto.getNewTCN());
 
-        serviceHandler.postDelayed(this.regenerateUUID, Constants.UUID_VALID_INTERVAL);
+        if (tcnProto != null && tcnProto.currentTCKpos == RATCHET_EXCHANGE_INTERVAL) {
+            tcnProto = null;
+        }
+        if (tcnProto == null) {
+            Log.i(LOG_TAG, "Regenerating Ratchet");
+            tcnProto = new TCNProtoGen();
+        }
+        bleAdvertiser.setBroadcastData(tcnProto.getNewTCN());
+        TCNProtoUtil.persistRatchet(tcnProto);
+        serviceHandler.postDelayed(this.regenerateUUID, Constants.TCN_VALID_INTERVAL);
     };
     //TODO move this to some alarmManager governed section.
 // Also ideally check the server when connected to WIFI and charger
