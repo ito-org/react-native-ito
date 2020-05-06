@@ -15,7 +15,7 @@ import androidx.annotation.RequiresApi;
 import static org.itoapp.strict.Helper.byte2Hex;
 
 public class CheckServerTask extends AsyncTask<Void, Void, Void> {
-    private static final String LOG_TAG = "CheckServerTask";
+    private static final String LOG_TAG = "ITOCheckServerTask";
     private ItoDBHelper dbHelper;
 
     public CheckServerTask(ItoDBHelper itoDBHelper) {

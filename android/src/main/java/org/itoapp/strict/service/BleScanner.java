@@ -20,7 +20,7 @@ import static org.itoapp.strict.Constants.BROADCAST_LENGTH;
 import static org.itoapp.strict.Constants.HASH_LENGTH;
 
 public class BleScanner {
-    private static final String LOG_TAG = "BleScanner";
+    private static final String LOG_TAG = "ITOBleScanner";
 
     private BluetoothLeScanner bluetoothLeScanner;
     private ScanCallback bluetoothScanCallback;

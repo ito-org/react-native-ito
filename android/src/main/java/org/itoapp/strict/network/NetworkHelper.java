@@ -23,8 +23,8 @@ import static org.itoapp.strict.Helper.byte2Hex;
 
 public class NetworkHelper {
 
-    private static final String LOG_TAG = "InfectedUUIDRepository";
-    public static final String BASE_URL = "http://loon:8080/tcnreport";
+    private static final String LOG_TAG = "ITOInfectedUUIDRepository";
+    public static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
 
     private static final int SIGNATURELENGTH = 64;
     private static final int BASELENGTH = 70;
@@ -84,33 +84,35 @@ public class NetworkHelper {
 
             lastReportHashForServer.lastcheck = new Date();
 
-            lastReportHashForServer.lastReportHash = byte2Hex(Arrays.copyOfRange(lastreport,0,lastreport.length -SIGNATURELENGTH));
+            lastReportHashForServer.lastReportHash = byte2Hex(Arrays.copyOfRange(lastreport, 0, lastreport.length - SIGNATURELENGTH));
             RoomDB.db.lastReportDao().saveOrUpdate(lastReportHashForServer);
         }
         return reports;
     }
 
 
-    public static void publishReport(byte[] report) throws IOException {
-        HttpURLConnection urlConnection = null;
-        try {
-            URL url = new URL(BASE_URL);
-            urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setDoOutput(true);
-            urlConnection.addRequestProperty("Content-Type", "application/octet-stream");
-            OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
-            outputStream.write(report);
-            outputStream.close();
+    public static void publishReports(List<byte[]> reports) throws IOException {
 
-            InputStream inputStream = urlConnection.getInputStream();
-            inputStream.read();
-            inputStream.close();
-        } catch (MalformedURLException e) {
-            Log.wtf(LOG_TAG, "Malformed URL?!", e);
-            throw new RuntimeException(e);
-        } finally {
-            if (urlConnection != null)
-                urlConnection.disconnect();
-        }
+        HttpURLConnection urlConnection = null;
+        for (byte[] report : reports) // FIXME: validate return code
+            try {
+                URL url = new URL(BASE_URL);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setDoOutput(true);
+                urlConnection.addRequestProperty("Content-Type", "application/octet-stream");
+                OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
+                outputStream.write(report);
+                outputStream.close();
+
+                InputStream inputStream = urlConnection.getInputStream();
+                inputStream.read();
+                inputStream.close();
+            } catch (MalformedURLException e) {
+                Log.wtf(LOG_TAG, "Malformed URL?!", e);
+                throw new RuntimeException(e);
+            } finally {
+                if (urlConnection != null)
+                    urlConnection.disconnect();
+            }
     }
 }

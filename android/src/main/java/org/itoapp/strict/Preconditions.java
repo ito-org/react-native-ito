@@ -13,7 +13,7 @@ import androidx.core.content.ContextCompat;
 
 
 public class Preconditions {
-    private static final String LOG_TAG = "Preconditions";
+    private static final String LOG_TAG = "ITOPreconditions";
 
     public static boolean isLocationServiceEnabled(Context context) {
         LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);

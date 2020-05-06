@@ -10,7 +10,7 @@ import static org.itoapp.strict.Constants.HASH_LENGTH;
 
 public class Helper {
 
-    private static final String LOG_TAG = "Helper";
+    private static final String LOG_TAG = "ITOHelper";
     private static MessageDigest sha256MessageDigest;
 
     private Helper() {

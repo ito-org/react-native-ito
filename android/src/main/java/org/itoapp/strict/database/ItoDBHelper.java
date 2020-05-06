@@ -14,7 +14,7 @@ import static org.itoapp.strict.Helper.byte2Hex;
 public class ItoDBHelper {
 
 
-    private static final String LOG_TAG = "ItoDBHelper";
+    private static final String LOG_TAG = "ITODBHelper";
 
     private void checkHashedUUID(byte[] hashedUUID) {
 

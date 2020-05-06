@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -30,6 +31,8 @@ import org.itoapp.strict.database.ItoDBHelper;
 import org.itoapp.strict.database.RoomDB;
 
 import java.security.SecureRandom;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
@@ -37,7 +40,7 @@ import androidx.core.app.NotificationCompat;
 import static org.itoapp.strict.Constants.RATCHET_EXCHANGE_INTERVAL;
 
 public class TracingService extends Service {
-    private static final String LOG_TAG = "TracingService";
+    private static final String LOG_TAG = "ITOTracingService";
     private static final String DEFAULT_NOTIFICATION_CHANNEL = "ContactTracing";
     private static final int NOTIFICATION_ID = 1;
     private TCNProtoGen tcnProto;
@@ -72,8 +75,9 @@ public class TracingService extends Service {
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
             // todo use from & to ?
-            TCNProtoUtil.loadAllRatchets().forEach(ratchet ->
-            new PublishBeaconsTask(ratchet.generateReport(ratchet.getRatchetTickCount()), callback).execute());
+            List<byte[]> reports = TCNProtoUtil.loadAllRatchets().stream().map(ratchet -> ratchet.generateReport(ratchet.getRatchetTickCount())).collect(Collectors.toList());
+
+            new PublishBeaconsTask(reports, callback).execute();
         }
 
         @RequiresApi(api = 24)
@@ -119,7 +123,15 @@ public class TracingService extends Service {
             tcnProto = new TCNProtoGen();
         }
         bleAdvertiser.setBroadcastData(tcnProto.getNewTCN());
-        TCNProtoUtil.persistRatchet(tcnProto);
+
+
+        AsyncTask.execute(new Runnable() { // FIXME make everything async and get aligned with sendReport etc.
+            @Override
+            public void run() {
+                TCNProtoUtil.persistRatchet(tcnProto);
+            }
+        });
+
         serviceHandler.postDelayed(this.regenerateUUID, Constants.TCN_VALID_INTERVAL);
     };
     //TODO move this to some alarmManager governed section.

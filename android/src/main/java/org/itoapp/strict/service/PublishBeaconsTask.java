@@ -5,18 +5,20 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import org.itoapp.PublishUUIDsCallback;
+import org.itoapp.strict.database.RoomDB;
 import org.itoapp.strict.network.NetworkHelper;
 
 import java.io.IOException;
+import java.util.List;
 
 class PublishBeaconsTask extends AsyncTask<Void, Void, Void> {
     private static final String LOG_TAG = "PublishBeaconsTask";
-    private byte[] report;
+    private List<byte[]> report;
     private long from;
     private long to;
     private PublishUUIDsCallback callback;
 
-    public PublishBeaconsTask(byte[] report, PublishUUIDsCallback callback) {
+    public PublishBeaconsTask(List<byte[]> report, PublishUUIDsCallback callback) {
         this.report = report;
         this.callback = callback;
     }
@@ -24,8 +26,9 @@ class PublishBeaconsTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... voids) {
         try {
-            NetworkHelper.publishReport(report);
+            NetworkHelper.publishReports(report);
             try {
+                RoomDB.db.localKeyDao().deleteAll(); // remove all Keys that we have sent
                 callback.onSuccess();
             } catch (RemoteException e) {
                 Log.e(LOG_TAG, "._.", e);
