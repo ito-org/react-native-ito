@@ -2,17 +2,15 @@ package org.itoapp.strict;
 
 import android.util.Log;
 
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.UUID;
 
 import static org.itoapp.strict.Constants.HASH_LENGTH;
 
 public class Helper {
 
-    private static final String LOG_TAG = "Helper";
+    private static final String LOG_TAG = "ITOHelper";
     private static MessageDigest sha256MessageDigest;
 
     private Helper() {
@@ -32,16 +30,24 @@ public class Helper {
         return Arrays.copyOf(sha256Hash, HASH_LENGTH);
     }
 
-    private static final char[] HEX_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
-    public static String encodeHexString(byte[] data) {
-        StringBuilder result = new StringBuilder();
-        // two characters form the hex value.
-        for (byte b : data) {
-            result.append(HEX_DIGITS[(0xF0 & b) >>> 4]);
-            result.append(HEX_DIGITS[0x0F & b]);
+    public static byte[] hex2Byte(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
         }
-        return result.toString();
-
+        return data;
     }
+
+    public static String byte2Hex(byte[] in) {
+        String s = "";
+        for (byte b : in) {
+            String st = String.format("%02X", b).toLowerCase();
+            s += st;
+        }
+        return s;
+    }
+
+
 }

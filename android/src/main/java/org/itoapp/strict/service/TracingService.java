@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -21,22 +22,28 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.core.app.NotificationCompat;
-
 import org.itoapp.DistanceCallback;
 import org.itoapp.PublishUUIDsCallback;
 import org.itoapp.TracingServiceInterface;
 import org.itoapp.strict.Constants;
-import org.itoapp.strict.Helper;
 import org.itoapp.strict.Preconditions;
 import org.itoapp.strict.database.ItoDBHelper;
+import org.itoapp.strict.database.RoomDB;
 
 import java.security.SecureRandom;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+
+import static org.itoapp.strict.Constants.RATCHET_EXCHANGE_INTERVAL;
 
 public class TracingService extends Service {
-    private static final String LOG_TAG = "TracingService";
+    private static final String LOG_TAG = "ITOTracingService";
     private static final String DEFAULT_NOTIFICATION_CHANNEL = "ContactTracing";
     private static final int NOTIFICATION_ID = 1;
+    private TCNProtoGen tcnProto;
     private SecureRandom uuidGenerator;
     private Looper serviceLooper;
     private Handler serviceHandler;
@@ -49,10 +56,9 @@ public class TracingService extends Service {
 
         @Override
         public void onReceive(Context context, android.content.Intent intent) {
-            if(!isBluetoothRunning()) {
+            if (!isBluetoothRunning()) {
                 startBluetooth();
-            }
-            else if(!Preconditions.canScanBluetooth(context)) {
+            } else if (!Preconditions.canScanBluetooth(context)) {
                 stopBluetooth();
             }
         }
@@ -65,18 +71,20 @@ public class TracingService extends Service {
         }
 
 
+        @RequiresApi(api = 24)
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
-            new PublishBeaconsTask(dbHelper, from, to, callback).execute();
+            // todo use from & to ?
+            List<byte[]> reports = TCNProtoUtil.loadAllRatchets().stream().map(ratchet -> ratchet.generateReport(ratchet.getRatchetTickCount())).collect(Collectors.toList());
+
+            new PublishBeaconsTask(reports, callback).execute();
         }
 
+        @RequiresApi(api = 24)
         @Override
         public boolean isPossiblyInfected() {
             //TODO do async
-            long totalExposureDuration = 0;
-            for(ItoDBHelper.ContactResult contact:dbHelper.selectInfectedContacts()) {
-                totalExposureDuration += contact.duration;
-            }
+            Long totalExposureDuration = RoomDB.db.seenTCNDao().findSickTCNs().stream().map(x -> x.duration).reduce(0L, (a, b) -> a + b);
             return totalExposureDuration > Constants.MIN_EXPOSURE_DURATION;
         }
 
@@ -93,9 +101,9 @@ public class TracingService extends Service {
     };
 
     private Runnable regenerateUUID = () -> {
-        Log.i(LOG_TAG, "Regenerating UUID");
+        Log.i(LOG_TAG, "Regenerating TCN");
 
-        byte[] uuid = new byte[Constants.UUID_LENGTH];
+      /*  byte[] uuid = new byte[Constants.UUID_LENGTH];
         uuidGenerator.nextBytes(uuid);
         byte[] hashedUUID = Helper.calculateTruncatedSHA256(uuid);
 
@@ -104,10 +112,27 @@ public class TracingService extends Service {
         byte[] broadcastData = new byte[Constants.BROADCAST_LENGTH];
         broadcastData[Constants.BROADCAST_LENGTH - 1] = getTransmitPower();
         System.arraycopy(hashedUUID, 0, broadcastData, 0, Constants.HASH_LENGTH);
+*/
 
-        bleAdvertiser.setBroadcastData(broadcastData);
 
-        serviceHandler.postDelayed(this.regenerateUUID, Constants.UUID_VALID_INTERVAL);
+        if (tcnProto != null && tcnProto.currentTCKpos == RATCHET_EXCHANGE_INTERVAL) {
+            tcnProto = null;
+        }
+        if (tcnProto == null) {
+            Log.i(LOG_TAG, "Regenerating Ratchet");
+            tcnProto = new TCNProtoGen();
+        }
+        bleAdvertiser.setBroadcastData(tcnProto.getNewTCN());
+
+
+        AsyncTask.execute(new Runnable() { // FIXME make everything async and get aligned with sendReport etc.
+            @Override
+            public void run() {
+                TCNProtoUtil.persistRatchet(tcnProto);
+            }
+        });
+
+        serviceHandler.postDelayed(this.regenerateUUID, Constants.TCN_VALID_INTERVAL);
     };
     //TODO move this to some alarmManager governed section.
 // Also ideally check the server when connected to WIFI and charger
@@ -116,10 +141,6 @@ public class TracingService extends Service {
         serviceHandler.postDelayed(this.checkServer, Constants.CHECK_SERVER_INTERVAL);
     };
 
-    private byte getTransmitPower() {
-        // TODO look up transmit power for current device
-        return (byte) -65;
-    }
 
     private boolean isBluetoothRunning() {
         return bleScanner != null;
@@ -131,13 +152,13 @@ public class TracingService extends Service {
         if (bleScanner != null)
             try {
                 bleScanner.stopScanning();
+            } catch (Exception ignored) {
             }
-            catch(Exception ignored) {}
         if (bleAdvertiser != null)
             try {
                 bleAdvertiser.stopAdvertising();
+            } catch (Exception ignored) {
             }
-            catch(Exception ignored) {}
 
         serviceHandler.removeCallbacks(regenerateUUID);
 
@@ -167,7 +188,7 @@ public class TracingService extends Service {
     public void onCreate() {
         super.onCreate();
         uuidGenerator = new SecureRandom();
-        dbHelper = new ItoDBHelper(this);
+        dbHelper = new ItoDBHelper();
         HandlerThread thread = new HandlerThread("TracingServiceHandler", Thread.NORM_PRIORITY);
         thread.start();
 
@@ -236,6 +257,6 @@ public class TracingService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        return binder;
+        return (IBinder) binder;
     }
 }

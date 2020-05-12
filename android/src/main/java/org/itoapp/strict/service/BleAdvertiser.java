@@ -11,7 +11,7 @@ import android.util.Log;
 import static org.itoapp.strict.Constants.BLUETOOTH_COMPANY_ID;
 
 public class BleAdvertiser {
-    private static final String LOG_TAG = "BleAdvertiser";
+    private static final String LOG_TAG = "ITOBleAdvertiser";
     private final Handler serviceHandler;
 
     private byte[] broadcastData;

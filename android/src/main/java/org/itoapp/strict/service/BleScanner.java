@@ -20,7 +20,7 @@ import static org.itoapp.strict.Constants.BROADCAST_LENGTH;
 import static org.itoapp.strict.Constants.HASH_LENGTH;
 
 public class BleScanner {
-    private static final String LOG_TAG = "BleScanner";
+    private static final String LOG_TAG = "ITOBleScanner";
 
     private BluetoothLeScanner bluetoothLeScanner;
     private ScanCallback bluetoothScanCallback;
@@ -52,13 +52,12 @@ public class BleScanner {
                     return;
                 }
 
-                byte txPower = receivedHash[HASH_LENGTH];
                 receivedHash = Arrays.copyOf(receivedHash, HASH_LENGTH);
 
                 int rssi = result.getRssi();
 
                 // TODO take antenna attenuation into account
-                float distance = (float) Math.pow(10F, ((float) txPower - rssi) / (10 * 2));
+                float distance = (float) Math.pow(10F, (-65 - rssi) / (10 * 2));
 
                 if(distance < Constants.MIN_SCANNING_DISTANCE)
                     contactCache.addReceivedBroadcast(receivedHash, distance);
