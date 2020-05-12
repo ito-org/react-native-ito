@@ -26,6 +26,7 @@ import org.itoapp.DistanceCallback;
 import org.itoapp.PublishUUIDsCallback;
 import org.itoapp.TracingServiceInterface;
 import org.itoapp.strict.Constants;
+import org.itoapp.strict.Helper;
 import org.itoapp.strict.Preconditions;
 import org.itoapp.strict.database.ItoDBHelper;
 import org.itoapp.strict.database.RoomDB;
@@ -122,7 +123,9 @@ public class TracingService extends Service {
             Log.i(LOG_TAG, "Regenerating Ratchet");
             tcnProto = new TCNProtoGen();
         }
-        bleAdvertiser.setBroadcastData(tcnProto.getNewTCN());
+        byte[] tcn = tcnProto.getNewTCN();
+        Log.i(LOG_TAG, "Advertising " + Helper.byte2Hex(tcn));
+        bleAdvertiser.setBroadcastData(tcn);
 
 
         AsyncTask.execute(new Runnable() { // FIXME make everything async and get aligned with sendReport etc.
