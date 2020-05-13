@@ -46,6 +46,7 @@ public class SeenTCN {
                 ", lastSeen=" + lastSeen +
                 ", duration=" + duration +
                 ", proximity=" + proximity +
+                ", reportedSick=" + reportedSick +
                 '}';
     }
 }

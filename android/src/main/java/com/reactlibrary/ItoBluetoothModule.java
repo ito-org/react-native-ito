@@ -60,7 +60,7 @@ public class ItoBluetoothModule extends ReactContextBaseJavaModule {
         Log.d(LOG_TAG, "Creating ItoBluetoothModule");
         if (RoomDB.db == null)
             RoomDB.db = Room.databaseBuilder(reactContext,
-                RoomDB.class, "ito.room.db").build();
+                RoomDB.class, "ito.room.db").allowMainThreadQueries().build();
         this.reactContext = reactContext;
         Intent intent = new Intent(reactContext, TracingService.class);
         reactContext.startService(intent);

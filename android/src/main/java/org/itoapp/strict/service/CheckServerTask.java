@@ -25,8 +25,13 @@ public class CheckServerTask extends AsyncTask<Void, Void, Void> {
     @RequiresApi(api = 24)
     @Override
     protected Void doInBackground(Void... voids) {
-        List<byte[]> reports = NetworkHelper.refreshInfectedUUIDs();
-        reports.stream().filter(x -> TCNProtoUtil.verifySignatureOfReportCorrect(x)).forEach(x -> TCNProtoUtil.generateAllTCNsFromReport(x, tcn -> this.checkInfection(tcn)));
+        try {
+            List<byte[]> reports = NetworkHelper.refreshInfectedUUIDs();
+            reports.stream().filter(x -> TCNProtoUtil.verifySignatureOfReportCorrect(x)).forEach(x -> TCNProtoUtil.generateAllTCNsFromReport(x, tcn -> this.checkInfection(tcn)));
+        } catch (Exception ex){
+            ex.printStackTrace(); // FIXME: Notify user of failed update
+        }
+
         /* List<ItoDBHelper.ContactResult> contactResults = dbHelper.selectInfectedContacts();
         if (!contactResults.isEmpty()) {
             Log.w(LOG_TAG, "Possibly encountered UUIDs: " + contactResults.size());

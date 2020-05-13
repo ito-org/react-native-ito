@@ -46,7 +46,7 @@ public class NetworkHelper {
                 url = new URL(BASE_URL + "?from=" + lastReportHashForServer.lastReportHash);
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.addRequestProperty("Accept", "application/octet-stream");
-            InputStream in = urlConnection.getInputStream();
+            InputStream in = new BlockingInputStream(urlConnection.getInputStream());
             byte[] base = new byte[BASELENGTH];
             byte[] memo;
             int readBytes;
