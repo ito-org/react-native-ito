@@ -23,7 +23,7 @@ import static org.itoapp.strict.Helper.byte2Hex;
 
 public class NetworkHelper {
 
-    private static final String LOG_TAG = "ITOInfectedUUIDRepository";
+    private static final String LOG_TAG = "ITONetworkHelper";
     public static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
 
     private static final int SIGNATURELENGTH = 64;
@@ -44,6 +44,7 @@ public class NetworkHelper {
                 url = new URL(BASE_URL);
             else
                 url = new URL(BASE_URL + "?from=" + lastReportHashForServer.lastReportHash);
+            Log.d(LOG_TAG, "Query using: " + url.toString());
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.addRequestProperty("Accept", "application/octet-stream");
             InputStream in = new BlockingInputStream(urlConnection.getInputStream());
@@ -79,6 +80,7 @@ public class NetworkHelper {
                 urlConnection.disconnect();
             }
         }
+        Log.d(LOG_TAG, "Found " + reports.size() + " new Reports");
         if (reports.size() > 0) {
             byte[] lastreport = reports.get(reports.size() - 1);
 
@@ -92,9 +94,9 @@ public class NetworkHelper {
 
 
     public static void publishReports(List<byte[]> reports) throws IOException {
-
         HttpURLConnection urlConnection = null;
-        for (byte[] report : reports) // FIXME: validate return code
+        for (byte[] report : reports) { // FIXME: validate return code
+            Log.d(LOG_TAG, "Publishing " + byte2Hex(report));
             try {
                 URL url = new URL(BASE_URL);
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -103,7 +105,9 @@ public class NetworkHelper {
                 OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
                 outputStream.write(report);
                 outputStream.close();
-
+                if (urlConnection.getResponseCode() != 200) {
+                    throw new RuntimeException("Response Code was " + urlConnection.getResponseCode());
+                }
                 InputStream inputStream = urlConnection.getInputStream();
                 inputStream.read();
                 inputStream.close();
@@ -114,5 +118,6 @@ public class NetworkHelper {
                 if (urlConnection != null)
                     urlConnection.disconnect();
             }
+        }
     }
 }

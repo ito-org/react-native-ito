@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.List;
 
 class PublishBeaconsTask extends AsyncTask<Void, Void, Void> {
-    private static final String LOG_TAG = "PublishBeaconsTask";
+    private static final String LOG_TAG = "ITOPublishTask";
     private List<byte[]> report;
     private long from;
     private long to;
