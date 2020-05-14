@@ -25,6 +25,7 @@ public class CheckServerTask extends AsyncTask<Void, Void, Void> {
     @RequiresApi(api = 24)
     @Override
     protected Void doInBackground(Void... voids) {
+        Log.d(LOG_TAG, "Check Server Task started");
         try {
             List<byte[]> reports = NetworkHelper.refreshInfectedUUIDs();
             reports.stream().filter(x -> TCNProtoUtil.verifySignatureOfReportCorrect(x)).forEach(x -> TCNProtoUtil.generateAllTCNsFromReport(x, tcn -> this.checkInfection(tcn)));

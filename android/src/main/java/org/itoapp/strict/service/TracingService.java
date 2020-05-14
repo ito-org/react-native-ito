@@ -76,6 +76,7 @@ public class TracingService extends Service {
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
             // todo use from & to ?
+            Log.d(LOG_TAG, "Publishing Reports...");
             List<byte[]> reports = TCNProtoUtil.loadAllRatchets().stream().map(ratchet -> ratchet.generateReport(ratchet.getRatchetTickCount())).collect(Collectors.toList());
 
             new PublishBeaconsTask(reports, callback).execute();
