@@ -94,9 +94,9 @@ public class NetworkHelper {
 
 
     public static void publishReports(List<byte[]> reports) throws IOException {
-
         HttpURLConnection urlConnection = null;
         for (byte[] report : reports) // FIXME: validate return code
+            Log.d(LOG_TAG, "Publishing " + byte2Hex(report));
             try {
                 URL url = new URL(BASE_URL);
                 urlConnection = (HttpURLConnection) url.openConnection();

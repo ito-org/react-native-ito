@@ -26,7 +26,6 @@ class PublishBeaconsTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... voids) {
         try {
-            Log.d(LOG_TAG, "Publishing " + report);
             NetworkHelper.publishReports(report);
             try {
                 RoomDB.db.localKeyDao().deleteAll(); // remove all Keys that we have sent
