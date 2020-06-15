@@ -85,6 +85,9 @@ dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'
 
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.65.01'
+    implementation 'com.google.code.gson:gson:2.8.0'
+
     // Room
     def room_version = "2.2.5"
 

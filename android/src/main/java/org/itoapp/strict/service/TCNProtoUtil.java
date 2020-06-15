@@ -1,5 +1,7 @@
 package org.itoapp.strict.service;
 
+import android.content.Context;
+
 import org.itoapp.strict.database.RoomDB;
 import org.itoapp.strict.database.entities.LocalKey;
 
@@ -47,17 +49,19 @@ public class TCNProtoUtil {
     }
 
 
-    public static void persistRatchet(TCNProtoGen ratchet) {
+    public static void persistRatchet(Context context, TCNProtoGen ratchet) {
+        RoomDB db = RoomDB.getInstance(context);
         LocalKey lk = new LocalKey();
         lk.lastGenerated = new Date();
         lk.rak = byte2Hex(ratchet.rak);
         lk.currentTCKpos = ratchet.currentTCKpos;
-        RoomDB.db.localKeyDao().saveOrUpdate(lk);
+        db.localKeyDao().saveOrUpdate(lk);
     }
 
     @RequiresApi(api = 24)
-    public static List<TCNProtoGen> loadAllRatchets() {
-        return RoomDB.db.localKeyDao().getAll().stream().map(x -> new TCNProtoGen(hex2Byte(x.rak), x.currentTCKpos)).collect(Collectors.toList());
+    public static List<TCNProtoGen> loadAllRatchets(Context context) {
+        RoomDB db = RoomDB.getInstance(context);
+        return db.localKeyDao().getAll().stream().map(x -> new TCNProtoGen(hex2Byte(x.rak), x.currentTCKpos)).collect(Collectors.toList());
     }
 
 

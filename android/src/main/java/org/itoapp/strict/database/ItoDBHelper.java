@@ -1,5 +1,6 @@
 package org.itoapp.strict.database;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.itoapp.strict.database.entities.LastReport;
@@ -13,6 +14,11 @@ import static org.itoapp.strict.Helper.byte2Hex;
 
 public class ItoDBHelper {
 
+    private final Context context;
+
+    public ItoDBHelper(Context context) {
+        this.context = context;
+    }
 
     private static final String LOG_TAG = "ITODBHelper";
 
@@ -23,27 +29,31 @@ public class ItoDBHelper {
     }
 
 
-    public synchronized void insertContact(byte[] hashed_uuid, int proximity, long duration) {
+    public void insertContact(byte[] hashed_uuid, int proximity, long duration) {
         checkHashedUUID(hashed_uuid);
         String tcn64 = byte2Hex(hashed_uuid);
-        SeenTCN seenTCN = RoomDB.db.seenTCNDao().findSeenTCNByHash(tcn64);
+
+        RoomDB db = RoomDB.getInstance(context);
+
+        SeenTCN seenTCN = db.seenTCNDao().findSeenTCNByHash(tcn64);
         if (seenTCN == null) {
             seenTCN = new SeenTCN(tcn64, new Date(), proximity, duration);
-            RoomDB.db.seenTCNDao().insert(seenTCN);
+            db.seenTCNDao().insert(seenTCN);
         } else {
             seenTCN.lastSeen = new Date();
             seenTCN.proximity = (seenTCN.proximity + proximity) / 2;
             seenTCN.duration += duration;
-            RoomDB.db.seenTCNDao().update(seenTCN);
+            db.seenTCNDao().update(seenTCN);
         }
         Log.d(LOG_TAG, "Inserted contact: " + seenTCN);
 
     }
 
 
-    public synchronized int getLatestFetchTime() {
+    public int getLatestFetchTime() {
         Log.d(LOG_TAG, "Getting latest fetch time");
-        final LastReport lastReportHashForServer = RoomDB.db.lastReportDao().getLastReportHashForServer(NetworkHelper.BASE_URL);
+        RoomDB db = RoomDB.getInstance(context);
+        final LastReport lastReportHashForServer = db.lastReportDao().getLastReportHashForServer(NetworkHelper.BASE_URL);
         if (lastReportHashForServer == null)
             return 0;
         return (int) lastReportHashForServer.lastcheck.getTime()/1000; // FIXME!

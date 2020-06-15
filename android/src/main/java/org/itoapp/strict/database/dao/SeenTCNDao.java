@@ -12,8 +12,8 @@ import androidx.room.Update;
 @Dao
 public interface SeenTCNDao {
 
-    @Query("SELECT * FROM SeenTCN WHERE reportedSick=1")
-    public List<SeenTCN> findSickTCNs();
+    @Query("SELECT * FROM SeenTCN")
+    List<SeenTCN> getAllSeenTCNs();
 
     @Query("SELECT * FROM SeenTCN WHERE tcn=:tcn")
     public SeenTCN findSeenTCNByHash(String tcn);

@@ -1,118 +1,91 @@
 package org.itoapp.strict.network;
 
-import android.text.TextUtils;
 import android.util.Log;
 
-import org.itoapp.strict.database.RoomDB;
-import org.itoapp.strict.database.entities.LastReport;
+import org.itoapp.psic.Client;
+import org.itoapp.psic.GsonSingleton;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import static org.itoapp.strict.Helper.byte2Hex;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class NetworkHelper {
 
-    private static final String LOG_TAG = "ITOInfectedUUIDRepository";
-    public static final String BASE_URL = "https://tcn.ito-app.org/tcnreport";
+    public static final String BASE_URL = "https://psi.ito-app.org";
+    private static final String LOG_TAG = "NetworkHelper";
 
-    private static final int SIGNATURELENGTH = 64;
-    private static final int BASELENGTH = 70;
+    public static int getNumberOfInfectedContacts(Set<byte[]> contacts) throws IOException {
+        Client psicClient = new Client();
+        OkHttpClient httpClient = new OkHttpClient();
+        Request setupRequest = new Request.Builder().url(BASE_URL + "/setup").get().build();
 
-    public static List<byte[]> refreshInfectedUUIDs() {
-        LastReport lastReportHashForServer = RoomDB.db.lastReportDao().getLastReportHashForServer(BASE_URL);
-        if (lastReportHashForServer == null) {
-            lastReportHashForServer = new LastReport();
-            lastReportHashForServer.serverUrl = BASE_URL;
-        }
-        List<byte[]> reports = new LinkedList<>();
-        HttpURLConnection urlConnection = null;
+        // required because the variable has to be effective final
+        final String[] setupMessage = new String[1];
+        final IOException[] setupRequestException = new IOException[1];
+
+        CountDownLatch requestLatch = new CountDownLatch(1);
+
+        // Query the setup message asynchronously
+        httpClient.newCall(setupRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                setupRequestException[0] = e;
+                requestLatch.countDown();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                setupMessage[0] = response.body().string();
+                response.close();
+                requestLatch.countDown();
+            }
+        });
+
+        String requestString = psicClient.createRequest(contacts);
+
+        RequestBody requestBody = RequestBody.create(MediaType.get("application/json"), requestString);
+        Request psicRequest = new Request.Builder().url(BASE_URL + "/request").post(requestBody).build();
+
+        Response psicResponse = httpClient.newCall(psicRequest).execute();
+        String psicResponseText = psicResponse.body().string();
+        psicResponse.close();
+
         try {
-            //TODO use a more sophisticated library
-            URL url;
-            if (TextUtils.isEmpty(lastReportHashForServer.lastReportHash))
-                url = new URL(BASE_URL);
-            else
-                url = new URL(BASE_URL + "?from=" + lastReportHashForServer.lastReportHash);
-            urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.addRequestProperty("Accept", "application/octet-stream");
-            InputStream in = new BlockingInputStream(urlConnection.getInputStream());
-            byte[] base = new byte[BASELENGTH];
-            byte[] memo;
-            int readBytes;
-            while ((readBytes = in.read(base, 0, BASELENGTH)) == BASELENGTH) {
-                int memolength = (int) base[BASELENGTH - 1] & 0xFF;
-                memo = new byte[memolength];
-                if (in.read(memo, 0, memolength) < memolength) {
-                    throw new RuntimeException("Parsing from Server failed");
-                }
-                byte[] signature = new byte[SIGNATURELENGTH];
-                if (in.read(signature, 0, SIGNATURELENGTH) < SIGNATURELENGTH) {
-                    throw new RuntimeException("Parsing from Server failed");
-                }
-                // use PushbackInputstream and get rid of BB?
-                ByteBuffer report = ByteBuffer.allocate(BASELENGTH + memolength + SIGNATURELENGTH);
-                report.put(base);
-                report.put(memo);
-                report.put(signature);
-                reports.add(report.array());
-            }
-            if (readBytes > 0)
-                throw new RuntimeException("Parsing from Server failed");
-        } catch (MalformedURLException e) {
-            Log.wtf(LOG_TAG, "Malformed URL?!", e);
+            requestLatch.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Log.e(LOG_TAG, "Got interrupted while waiting for response!", e);
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }
         }
-        if (reports.size() > 0) {
-            byte[] lastreport = reports.get(reports.size() - 1);
 
-            lastReportHashForServer.lastcheck = new Date();
+        if (setupRequestException[0] != null)
+            throw setupRequestException[0];
 
-            lastReportHashForServer.lastReportHash = byte2Hex(Arrays.copyOfRange(lastreport, 0, lastreport.length - SIGNATURELENGTH));
-            RoomDB.db.lastReportDao().saveOrUpdate(lastReportHashForServer);
-        }
-        return reports;
+        return psicClient.calculateIntersectionCardinality(setupMessage[0], psicResponseText);
     }
 
 
-    public static void publishReports(List<byte[]> reports) throws IOException {
+    public static void submitReports(Set<byte[]> reports) throws IOException {
+        OkHttpClient client = new OkHttpClient();
 
-        HttpURLConnection urlConnection = null;
-        for (byte[] report : reports) // FIXME: validate return code
-            try {
-                URL url = new URL(BASE_URL);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setDoOutput(true);
-                urlConnection.addRequestProperty("Content-Type", "application/octet-stream");
-                OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
-                outputStream.write(report);
-                outputStream.close();
+        String reportsJson = GsonSingleton.GSON.toJson(reports);
+        RequestBody requestBody = RequestBody.create(MediaType.get("application/json"), reportsJson);
 
-                InputStream inputStream = urlConnection.getInputStream();
-                inputStream.read();
-                inputStream.close();
-            } catch (MalformedURLException e) {
-                Log.wtf(LOG_TAG, "Malformed URL?!", e);
-                throw new RuntimeException(e);
-            } finally {
-                if (urlConnection != null)
-                    urlConnection.disconnect();
-            }
+        Request request = new Request.Builder().url(BASE_URL + "/publish").post(requestBody).build();
+
+        Response response = client.newCall(request).execute();
+
+        if(!response.isSuccessful()) {
+            throw new IOException("Could not upload the tcn reports. " + response.message());
+        }
+        response.close();
     }
 }

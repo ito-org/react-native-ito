@@ -22,6 +22,9 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+
 import org.itoapp.DistanceCallback;
 import org.itoapp.PublishUUIDsCallback;
 import org.itoapp.TracingServiceInterface;
@@ -29,14 +32,10 @@ import org.itoapp.strict.Constants;
 import org.itoapp.strict.Helper;
 import org.itoapp.strict.Preconditions;
 import org.itoapp.strict.database.ItoDBHelper;
-import org.itoapp.strict.database.RoomDB;
 
 import java.security.SecureRandom;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
 
 import static org.itoapp.strict.Constants.RATCHET_EXCHANGE_INTERVAL;
 
@@ -64,7 +63,7 @@ public class TracingService extends Service {
             }
         }
     };
-
+    private int risk;
     private TracingServiceInterface.Stub binder = new TracingServiceInterface.Stub() {
         @Override
         public void setDistanceCallback(DistanceCallback distanceCallback) {
@@ -76,17 +75,19 @@ public class TracingService extends Service {
         @Override
         public void publishBeaconUUIDs(long from, long to, PublishUUIDsCallback callback) {
             // todo use from & to ?
-            List<byte[]> reports = TCNProtoUtil.loadAllRatchets().stream().map(ratchet -> ratchet.generateReport(ratchet.getRatchetTickCount())).collect(Collectors.toList());
+            Set<byte[]> reports = TCNProtoUtil.loadAllRatchets(TracingService.this)
+                    .stream()
+                    .map(ratchet -> ratchet.generateReport(ratchet.getRatchetTickCount()))
+                    .collect(Collectors.toSet());
 
-            new PublishBeaconsTask(reports, callback).execute();
+            new PublishBeaconsTask(TracingService.this, reports, callback).execute();
         }
 
         @RequiresApi(api = 24)
         @Override
         public boolean isPossiblyInfected() {
             //TODO do async
-            Long totalExposureDuration = RoomDB.db.seenTCNDao().findSickTCNs().stream().map(x -> x.duration).reduce(0L, (a, b) -> a + b);
-            return totalExposureDuration > Constants.MIN_EXPOSURE_DURATION;
+            return risk > 1;
         }
 
         @Override
@@ -140,10 +141,10 @@ public class TracingService extends Service {
     //TODO move this to some alarmManager governed section.
 // Also ideally check the server when connected to WIFI and charger
     private Runnable checkServer = () -> {
-        new CheckServerTask(dbHelper).execute();
+        new CheckServerTask(this, risk -> this.risk = risk).execute();
+
         serviceHandler.postDelayed(this.checkServer, Constants.CHECK_SERVER_INTERVAL);
     };
-
 
     private boolean isBluetoothRunning() {
         return bleScanner != null;
@@ -191,7 +192,7 @@ public class TracingService extends Service {
     public void onCreate() {
         super.onCreate();
         uuidGenerator = new SecureRandom();
-        dbHelper = new ItoDBHelper();
+        dbHelper = new ItoDBHelper(this);
         HandlerThread thread = new HandlerThread("TracingServiceHandler", Thread.NORM_PRIORITY);
         thread.start();
 

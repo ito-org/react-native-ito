@@ -25,9 +25,6 @@ public class SeenTCN {
     @ColumnInfo(name = "proximity")
     public long proximity;
 
-    @ColumnInfo(name = "reportedSick")
-    public boolean reportedSick = false;
-
     public SeenTCN() {
     }
 
@@ -46,7 +43,6 @@ public class SeenTCN {
                 ", lastSeen=" + lastSeen +
                 ", duration=" + duration +
                 ", proximity=" + proximity +
-                ", reportedSick=" + reportedSick +
                 '}';
     }
 }
